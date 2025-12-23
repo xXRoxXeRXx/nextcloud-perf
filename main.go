@@ -5,8 +5,7 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
-	"time"
-	
+
 	"nextcloud-perf/internal/ui"
 )
 
@@ -29,15 +28,15 @@ func openBrowser(url string) {
 
 func main() {
 	fmt.Println("Starting Nextcloud Performance Tool...")
-	
+
 	// Start UI Server
 	server := ui.NewServer(3000)
-	
-	// Open Browser in a goroutine (wait a bit for server to start)
+
+	// Open Browser in a goroutine (wait for server to be ready)
 	go func() {
-		time.Sleep(500 * time.Millisecond)
+		<-server.ReadyChan
 		openBrowser("http://localhost:3000")
 	}()
-	
+
 	server.Listen()
 }

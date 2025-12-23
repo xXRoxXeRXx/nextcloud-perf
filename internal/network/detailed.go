@@ -38,7 +38,7 @@ func MeasureDetailedTCPPing(host string, count int, timeout time.Duration) (Deta
 		start := time.Now()
 		conn, err := net.DialTimeout("tcp", host, timeout)
 		duration := time.Since(start).Seconds() * 1000 // ms
-		
+
 		res := PingResult{
 			Seq: i,
 		}
@@ -51,7 +51,7 @@ func MeasureDetailedTCPPing(host string, count int, timeout time.Duration) (Deta
 			res.Success = true
 			res.TimeMs = duration
 			stats.SuccessCount++
-			
+
 			totalTime += duration
 			validTimes = append(validTimes, duration)
 		}
@@ -60,16 +60,16 @@ func MeasureDetailedTCPPing(host string, count int, timeout time.Duration) (Deta
 	}
 
 	// Calculate Stats
-	if stats.SuccessCount > 0 {
+	if stats.SuccessCount > 0 && len(validTimes) > 0 {
 		stats.AvgMs = totalTime / float64(stats.SuccessCount)
-		
+
 		sort.Float64s(validTimes)
 		stats.MinMs = validTimes[0]
 		stats.MaxMs = validTimes[len(validTimes)-1]
 	}
-	
+
 	stats.PacketLoss = (float64(count-stats.SuccessCount) / float64(count)) * 100
-	
+
 	return stats, nil
 }
 
@@ -84,12 +84,12 @@ func MeasureDNS(host string) DNSResult {
 	start := time.Now()
 	ips, err := net.LookupIP(host)
 	duration := time.Since(start).Seconds() * 1000
-	
+
 	res := DNSResult{
 		Host:           host,
 		ResolutionTime: duration,
 	}
-	
+
 	if err != nil {
 		res.Error = err.Error()
 	} else {

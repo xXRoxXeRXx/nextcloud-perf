@@ -1,0 +1,48 @@
+package webdav
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestGetCapabilities(t *testing.T) {
+	// Mock Server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify Request
+		if r.Method != "GET" {
+			t.Errorf("Expected GET, got %s", r.Method)
+		}
+		if r.Header.Get("OCS-APIRequest") != "true" {
+			t.Error("Missing OCS-APIRequest header")
+		}
+		user, pass, ok := r.BasicAuth()
+		if !ok || user != "testuser" || pass != "testpass" {
+			t.Error("Invalid Auth")
+		}
+
+		// Response
+		resp := CapabilitiesResponse{}
+		resp.Ocs.Data.Version.String = "25.0.0"
+		resp.Ocs.Data.Capabilities.Files.BigFileChunking = true
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer ts.Close()
+
+	// Test Client
+	client := NewClient(ts.URL, "testuser", "testpass", nil)
+	caps, err := client.GetCapabilities()
+	if err != nil {
+		t.Fatalf("Failed to get capabilities: %v", err)
+	}
+
+	if caps.Ocs.Data.Version.String != "25.0.0" {
+		t.Errorf("Expected version 25.0.0, got %s", caps.Ocs.Data.Version.String)
+	}
+	if !caps.Ocs.Data.Capabilities.Files.BigFileChunking {
+		t.Error("Expected BigFileChunking to be true")
+	}
+}
