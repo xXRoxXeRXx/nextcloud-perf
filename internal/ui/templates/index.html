@@ -78,6 +78,7 @@
             border-top-color: white;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            flex-shrink: 0;
         }
 
         @keyframes spin {
@@ -188,7 +189,7 @@
                     </div>
                 </div>
                 <div
-                    style="background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Medium Files</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">5 x 5MB</div>
                     <div style="margin-top: 10px;">
@@ -201,7 +202,7 @@
                     </div>
                 </div>
                 <div
-                    style="background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Large File</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">512MB Chunked</div>
                     <div style="margin-top: 10px;">
@@ -302,20 +303,34 @@
             }
             if (msg.includes("Small Files") || msg.includes("Medium Files") || msg.includes("Large File") || msg.includes("chunk")) {
                 setStage('benchmark');
-                if (msg.includes("Starting Small")) setProgress(52);
-                if (msg.includes("Small Files:")) setProgress(58);
-                if (msg.includes("Starting Medium")) setProgress(60);
-                if (msg.includes("Medium Files:")) setProgress(68);
-                if (msg.includes("Starting Large")) setProgress(70);
+                // Uploads: 50 -> 70%
+                // Downloads: 70 -> 90%
+
+                if (msg.includes("Starting Small Files Test")) setProgress(52);
+                if (msg.includes("Small Files Upload")) setProgress(55);
+
+                if (msg.includes("Starting Small Files Download")) setProgress(57);
+                if (msg.includes("Small Files Download")) setProgress(60);
+
+                if (msg.includes("Starting Medium Files Test")) setProgress(62);
+                if (msg.includes("Medium Files Upload")) setProgress(65);
+
+                if (msg.includes("Starting Medium Files Download")) setProgress(67);
+                if (msg.includes("Medium Files Download")) setProgress(70);
+
+                if (msg.includes("Starting Large File Test")) setProgress(72);
                 if (msg.includes("chunk")) {
                     const match = msg.match(/chunk (\d+)/);
                     if (match) {
                         const chunkNum = parseInt(match[1]);
-                        // 512MB / 10MB = ~52 chunks, map to 70-90%
-                        setProgress(70 + Math.min(Math.floor(chunkNum * 0.4), 20));
+                        // Chunk 1-52 mapping to 72-82%
+                        setProgress(72 + Math.min(Math.floor(chunkNum * 0.2), 10));
                     }
                 }
-                if (msg.includes("Large File:")) setProgress(90);
+                if (msg.includes("Large File Upload")) setProgress(82);
+
+                if (msg.includes("Starting Large File Download")) setProgress(85);
+                if (msg.includes("Large File Download")) setProgress(90);
             }
             if (msg.includes("Cleanup") || msg.includes("Generating Report") || msg.includes("Report Ready")) {
                 setStage('report');

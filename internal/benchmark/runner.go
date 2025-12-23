@@ -67,7 +67,7 @@ type Result struct {
 	Errors    []error
 }
 
-func RunSmallFiles(client *webdav.Client, basePath string, count int, size int64, parallel int) (*Result, error) {
+func RunSmallFiles(client *webdav.Client, basePath string, filePrefix string, count int, size int64, parallel int) (*Result, error) {
 	// Parameter validation
 	if count <= 0 || size <= 0 || parallel <= 0 {
 		return &Result{
@@ -94,7 +94,7 @@ func RunSmallFiles(client *webdav.Client, basePath string, count int, size int64
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			filename := fmt.Sprintf("%s/test_small_%d.bin", basePath, idx)
+			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
 			reader := &ZeroReader{Limit: size}
 
 			_, err := client.UploadSimple(filename, reader)
@@ -179,7 +179,7 @@ func (z *ZeroReader) ReadFrom(r io.Reader) (n int64, err error) {
 	}
 }
 
-func RunDownloadSmallFiles(client *webdav.Client, basePath string, count int, parallel int) (*Result, error) {
+func RunDownloadSmallFiles(client *webdav.Client, basePath string, filePrefix string, count int, parallel int) (*Result, error) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, parallel)
 
@@ -195,7 +195,7 @@ func RunDownloadSmallFiles(client *webdav.Client, basePath string, count int, pa
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			filename := fmt.Sprintf("%s/test_small_%d.bin", basePath, idx)
+			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
 			rc, err := client.Download(filename)
 			if err != nil {
 				mu.Lock()

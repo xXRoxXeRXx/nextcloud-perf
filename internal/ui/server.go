@@ -244,7 +244,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		// 4. BENCHMARKS
 		// Small Files: 10 x 512KB
 		s.Broadcast("Starting Small Files Test (10 x 512KB)...")
-		resSmall, err := benchmark.RunSmallFiles(client, testFolder, 10, 512*1024, 5)
+		resSmall, err := benchmark.RunSmallFiles(client, testFolder, "test_small_", 10, 512*1024, 5)
 		if err != nil {
 			rpt.SmallFiles.Errors = []error{err}
 			s.Broadcast(fmt.Sprintf("Small Files Error: %v", err))
@@ -255,7 +255,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 		// Small Files Download
 		s.Broadcast("Starting Small Files Download...")
-		resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, 10, 5)
+		resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_small_", 10, 5)
 		if err != nil {
 			rpt.SmallFilesDown.Errors = []error{err}
 			s.Broadcast(fmt.Sprintf("Download Error: %v", err))
@@ -266,7 +266,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 		// Medium Files: 5 x 5MB (sequential for accurate speed measurement)
 		s.Broadcast("Starting Medium Files Test (5 x 5MB)...")
-		resMedium, err := benchmark.RunSmallFiles(client, testFolder, 5, 5*1024*1024, 1)
+		resMedium, err := benchmark.RunSmallFiles(client, testFolder, "test_medium_", 5, 5*1024*1024, 1)
 		if err != nil {
 			rpt.MediumFiles.Errors = []error{err}
 			s.Broadcast(fmt.Sprintf("Medium Files Error: %v", err))
@@ -277,7 +277,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 		// Medium Files Download
 		s.Broadcast("Starting Medium Files Download...")
-		resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, 5, 1)
+		resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_medium_", 5, 1)
 		if err != nil {
 			rpt.MediumFilesDown.Errors = []error{err}
 			s.Broadcast(fmt.Sprintf("Medium Download Error: %v", err))
