@@ -1,0 +1,231 @@
+/* AppImage Re-Signer - IONOS Design */
+/* Based on log-scanner styling with IONOS brand colors */
+
+/* CSS Variables for Light/Dark Mode */
+:root {
+    /* IONOS Brand Colors */
+    --global--color-ionos-blue: #003d8f;
+    --global--color-dark-midnight: #001b41;
+
+    --bg-gradient-start: var(--global--color-ionos-blue);
+    --bg-gradient-end: var(--global--color-dark-midnight);
+    --container-bg: #ffffff;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --upload-zone-bg: #f8f9ff;
+    --upload-zone-hover: #f0f1ff;
+    --upload-zone-dragover: #e8e9ff;
+    --upload-zone-border: var(--global--color-ionos-blue);
+    --file-item-bg: #f5f5f5;
+    --button-bg: linear-gradient(135deg, var(--global--color-ionos-blue) 0%, var(--global--color-dark-midnight) 100%);
+    --button-hover: linear-gradient(135deg, #004ba3 0%, #002855 100%);
+    --progress-bg: #e0e7ff;
+    --progress-fill: linear-gradient(90deg, var(--global--color-ionos-blue) 0%, var(--global--color-dark-midnight) 100%);
+    --error-bg: #ff4757;
+    --success-bg: #2ecc71;
+    --loading-bg: #f8f9ff;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --shadow-sm: rgba(0, 0, 0, 0.1);
+    --shadow-md: rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Mode Variables */
+[data-theme="dark"] {
+    --bg-gradient-start: var(--global--color-dark-midnight);
+    --bg-gradient-end: #000a1f;
+    --container-bg: #0f3460;
+    --text-primary: #e4e4e4;
+    --text-secondary: #b8b8b8;
+    --text-tertiary: #888888;
+    --upload-zone-bg: #1a2332;
+    --upload-zone-hover: #1f2937;
+    --upload-zone-dragover: #243042;
+    --upload-zone-border: #4a90e2;
+    --file-item-bg: #1a2332;
+    --button-bg: linear-gradient(135deg, #4a90e2 0%, #764ba2 100%);
+    --button-hover: linear-gradient(135deg, #3a7bc8 0%, #63408b 100%);
+    --progress-bg: #1a2332;
+    --progress-fill: linear-gradient(90deg, #4a90e2 0%, #764ba2 100%);
+    --error-bg: #ff4757;
+    --success-bg: #2ecc71;
+    --loading-bg: #1a2332;
+    --card-bg: #1a2332;
+    --border-color: #2a3a52;
+    --shadow-sm: rgba(0, 0, 0, 0.3);
+    --shadow-md: rgba(0, 0, 0, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, var(--global--color-ionos-blue) 0%, var(--global--color-dark-midnight) 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container {
+    background: var(--container-bg);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px var(--shadow-md);
+    padding: 50px;
+    max-width: 800px;
+    width: 100%;
+    position: relative;
+}
+
+/* Dark Mode Toggle Button */
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--upload-zone-bg);
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    box-shadow: 0 4px 12px var(--shadow-sm);
+}
+
+.theme-toggle:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 20px var(--shadow-md);
+}
+
+.theme-toggle:active {
+    transform: translateY(0) scale(0.98);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+h1 {
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--shadow-md);
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+input[type="text"],
+input[type="password"],
+textarea,
+select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--upload-zone-bg);
+    color: var(--text-primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--global--color-ionos-blue);
+    box-shadow: 0 0 0 3px rgba(0, 61, 143, 0.1);
+    background: var(--container-bg);
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, var(--global--color-ionos-blue) 0%, var(--global--color-dark-midnight) 100%);
+    color: white;
+    border: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 16px rgba(0, 61, 143, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #004ba3 0%, #002855 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0, 61, 143, 0.5);
+}
+
+/* Logs */
+#log {
+    background: #1b1b1b;
+    color: #00ff00;
+    padding: 15px;
+    border-radius: 12px;
+    height: 400px;
+    overflow-y: scroll;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    display: none;
+    margin-top: 20px;
+    border: 2px solid var(--border-color);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
