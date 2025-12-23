@@ -178,7 +178,7 @@
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Small Files</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">10 x 512KB</div>
+                    <div style="font-size: 0.7em; opacity: 0.7;">5 x 512KB</div>
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
                             style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
@@ -191,7 +191,7 @@
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Medium Files</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">5 x 5MB</div>
+                    <div style="font-size: 0.7em; opacity: 0.7;">3 x 5MB</div>
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
                             style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
@@ -204,7 +204,7 @@
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Large File</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">512MB Chunked</div>
+                    <div style="font-size: 0.7em; opacity: 0.7;">256MB Chunked</div>
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
                             style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
@@ -232,6 +232,20 @@
                     style="background: #f8f9ff; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
                     <div style="font-size: 0.85em; color: #666;">Packet Loss</div>
                     <div style="font-size: 1.4em; font-weight: bold; color: #003d8f;" id="resLoss">--</div>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div
+                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
+                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
+                </div>
+                <div
+                    style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 0.85em; color: #166534;">Upload (Ref)</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
                 </div>
             </div>
 
@@ -299,7 +313,14 @@
             }
             if (msg.includes("Connecting") || msg.includes("Connected")) {
                 setStage('connect');
-                setProgress(50);
+                setProgress(45);
+            }
+            // Speedtest Logic
+            if (msg.includes("Reference Speedtest") || msg.includes("Ref Speed")) {
+                setStage('network'); // Reuse network stage or add new one? keeping simple
+                if (msg.includes("Running")) setProgress(12);
+                if (msg.includes("Speedtest:")) setProgress(15);
+                if (msg.includes("Ref Speed")) setProgress(18);
             }
             if (msg.includes("Small Files") || msg.includes("Medium Files") || msg.includes("Large File") || msg.includes("chunk")) {
                 setStage('benchmark');
@@ -341,31 +362,66 @@
         });
 
         evtSource.addEventListener("result", function (event) {
-            const data = JSON.parse(event.data);
+            let data;
+            try {
+                data = JSON.parse(event.data);
+            } catch (e) {
+                logDiv.innerHTML += "<div style='color:red'>JSON Parse Error: " + e + "</div>";
+                console.error("JSON Parse Error", e, event.data);
+                return;
+            }
 
             setProgress(100);
 
-            // Transition to Results
-            document.getElementById('progressCard').style.display = 'none';
-            document.getElementById('resultsCard').style.display = 'block';
+
+            // Only show results if completed
+            if (data.Completed) {
+                document.getElementById('progressCard').style.display = 'none';
+                document.getElementById('resultsCard').style.display = 'block';
+            }
+
 
             // Populate Speed Results (Upload)
-            document.getElementById('resSmall').innerText = data.SmallFiles.SpeedMBps.toFixed(2) + " MB/s";
-            document.getElementById('resMedium').innerText = data.MediumFiles.SpeedMBps.toFixed(2) + " MB/s";
-            document.getElementById('resLarge').innerText = data.LargeFile.SpeedMBps.toFixed(2) + " MB/s";
+            document.getElementById('resSmall').innerText = (data.SmallFiles.SpeedMBps > 0) ? (data.SmallFiles.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resMedium').innerText = (data.MediumFiles.SpeedMBps > 0) ? (data.MediumFiles.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resLarge').innerText = (data.LargeFile.SpeedMBps > 0) ? (data.LargeFile.SpeedMBps.toFixed(2) + " MB/s") : "--";
 
             // Populate Speed Results (Download)
-            document.getElementById('resSmallDown').innerText = data.SmallFilesDown.SpeedMBps.toFixed(2) + " MB/s";
-            document.getElementById('resMediumDown').innerText = data.MediumFilesDown.SpeedMBps.toFixed(2) + " MB/s";
-            document.getElementById('resLargeDown').innerText = data.LargeFileDown.SpeedMBps.toFixed(2) + " MB/s";
+            document.getElementById('resSmallDown').innerText = (data.SmallFilesDown.SpeedMBps > 0) ? (data.SmallFilesDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resMediumDown').innerText = (data.MediumFilesDown.SpeedMBps > 0) ? (data.MediumFilesDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resLargeDown').innerText = (data.LargeFileDown.SpeedMBps > 0) ? (data.LargeFileDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
 
             // Network Summary
             if (data.PingStats) {
-                document.getElementById('resPing').innerText = data.PingStats.AvgMs.toFixed(1) + " ms";
-                document.getElementById('resLoss').innerText = data.PingStats.PacketLoss.toFixed(1) + "%";
+                // Check if ping stats are populated
+                if (data.PingStats.avg_ms > 0 || data.PingStats.packet_loss >= 0) {
+                    document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(1) + " ms";
+                    document.getElementById('resLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
+                }
             }
             if (data.DNS) {
-                document.getElementById('resDNS').innerText = data.DNS.ResolutionTime.toFixed(1) + " ms";
+                if (data.DNS.resolution_time > 0) {
+                    document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
+                }
+            }
+
+            // Reference Speed
+            // Reference Speed
+            if (data.Speedtest) {
+                if (data.Speedtest.error) {
+                    document.getElementById('refDown').innerText = "Error";
+                    document.getElementById('refUp').innerText = "Error";
+                    document.getElementById('refDown').style.color = "#cc0000";
+                    document.getElementById('refUp').style.color = "#cc0000";
+                } else {
+                    let dMbps = (data.Speedtest.download_speed || 0).toFixed(2);
+                    let dMBps = (data.Speedtest.download_mbps || 0).toFixed(2);
+                    let uMbps = (data.Speedtest.upload_speed || 0).toFixed(2);
+                    let uMBps = (data.Speedtest.upload_mbps || 0).toFixed(2);
+
+                    document.getElementById('refDown').innerText = `${dMbps} Mbps (${dMBps} MB/s)`;
+                    document.getElementById('refUp').innerText = `${uMbps} Mbps (${uMBps} MB/s)`;
+                }
             }
         });
 

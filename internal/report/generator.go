@@ -27,6 +27,7 @@ type ReportData struct {
 	SystemOS    string
 	CPU         CPUInfo
 	RAM         RAMInfo
+	Completed   bool // Signals if the benchmark is fully finished
 
 	LocalNetwork network.LocalNetworkInfo
 	PingStats    network.DetailedPingStats
@@ -39,12 +40,13 @@ type ReportData struct {
 	MediumFilesDown SpeedResult
 	LargeFile       SpeedResult
 	LargeFileDown   SpeedResult
+	Speedtest       *network.SpeedtestResult `json:"Speedtest,omitempty"`
 }
 
 type SpeedResult struct {
 	SpeedMBps float64
 	Duration  time.Duration
-	Errors    []error
+	Errors    []string
 }
 
 // Embedded CSS to ensure the report is standalone
@@ -142,6 +144,8 @@ const htmlTemplate = `
             </div>
         </div>
 
+
+
         <div class="section">
             <h2>Network Diagnostics</h2>
             <div class="grid">
@@ -188,11 +192,31 @@ const htmlTemplate = `
             {{end}}
         </div>
 
+        {{if .Data.Speedtest}}
+        <div class="section">
+            <h2>Reference Speed (Speedtest.net)</h2>
+            <div class="grid">
+                <div class="card" style="background: #e8f4fd; border-color: #b6e0fe;">
+                    <div class="metric-label">Download Speed</div>
+                    <div class="metric-value">{{printf "%.2f Mbps" .Data.Speedtest.DownloadSpeed}}</div>
+                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f MB/s" .Data.Speedtest.DownloadMBps}})</div>
+                    <div class="metric-label" style="margin-top:5px;">Server: {{.Data.Speedtest.ServerName}}</div>
+                </div>
+                <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
+                    <div class="metric-label">Upload Speed</div>
+                    <div class="metric-value">{{printf "%.2f Mbps" .Data.Speedtest.UploadSpeed}}</div>
+                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f MB/s" .Data.Speedtest.UploadMBps}})</div>
+                    <div class="metric-label" style="margin-top:5px;">Latency: {{.Data.Speedtest.Latency}}</div>
+                </div>
+            </div>
+        </div>
+        {{end}}
+
         <div class="section">
             <h2>WebDAV Benchmark</h2>
             <div class="grid">
                 <div class="card">
-                    <div class="metric-label">Small Files (10 x 512KB)</div>
+                    <div class="metric-label">Small Files (5 x 512KB)</div>
                     <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.SmallFiles.SpeedMBps}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFiles.Duration.Seconds}})</span>
@@ -215,7 +239,7 @@ const htmlTemplate = `
                     {{end}}
                 </div>
                 <div class="card">
-                    <div class="metric-label">Medium Files (5 x 5MB)</div>
+                    <div class="metric-label">Medium Files (3 x 5MB)</div>
                       <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.MediumFiles.SpeedMBps}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFiles.Duration.Seconds}})</span>
@@ -238,7 +262,7 @@ const htmlTemplate = `
                     {{end}}
                 </div>
                 <div class="card">
-                     <div class="metric-label">Large File (512MB Chunked)</div>
+                     <div class="metric-label">Large File (256MB Chunked)</div>
                       <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.LargeFile.SpeedMBps}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFile.Duration.Seconds}})</span>

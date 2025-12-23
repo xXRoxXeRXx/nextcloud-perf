@@ -97,7 +97,10 @@ func RunSmallFiles(client *webdav.Client, basePath string, filePrefix string, co
 			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
 			reader := &ZeroReader{Limit: size}
 
-			_, err := client.UploadSimple(filename, reader)
+			_, err := client.UploadSimple(filename, reader, size)
+			if err == nil {
+				client.LogFunc(fmt.Sprintf("DEBUG: Uploaded %d bytes to %s", size, filename))
+			}
 			if err != nil {
 				mu.Lock()
 				errs = append(errs, err)
@@ -136,7 +139,7 @@ func RunLargeFile(client *webdav.Client, basePath string, size int64, useChunkin
 	if useChunking {
 		_, err = client.UploadChunked(filename, reader, size)
 	} else {
-		_, err = client.UploadSimple(filename, reader)
+		_, err = client.UploadSimple(filename, reader, size)
 	}
 
 	duration := time.Since(start)
@@ -206,7 +209,11 @@ func RunDownloadSmallFiles(client *webdav.Client, basePath string, filePrefix st
 			defer rc.Close()
 
 			// Read and discard
-			written, _ := io.Copy(io.Discard, rc)
+			written, errCopy := io.Copy(io.Discard, rc)
+			if errCopy != nil {
+				client.LogFunc(fmt.Sprintf("Download stream error: %v", errCopy))
+			}
+			client.LogFunc(fmt.Sprintf("DEBUG: Downloaded %d bytes from %s", written, filename))
 
 			mu.Lock()
 			totalBytes += written

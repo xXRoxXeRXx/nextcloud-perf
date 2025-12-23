@@ -14,14 +14,14 @@ type PingResult struct {
 }
 
 type DetailedPingStats struct {
-	Host         string
-	Count        int
-	Results      []PingResult
-	MinMs        float64
-	MaxMs        float64
-	AvgMs        float64
-	SuccessCount int
-	PacketLoss   float64
+	Host         string       `json:"host"`
+	Count        int          `json:"count"`
+	Results      []PingResult `json:"results"`
+	MinMs        float64      `json:"min_ms"`
+	MaxMs        float64      `json:"max_ms"`
+	AvgMs        float64      `json:"avg_ms"`
+	SuccessCount int          `json:"success_count"`
+	PacketLoss   float64      `json:"packet_loss"`
 }
 
 // MeasureDetailedTCPPing performs 'count' TCP connects and returns detailed stats
@@ -74,10 +74,10 @@ func MeasureDetailedTCPPing(host string, count int, timeout time.Duration) (Deta
 }
 
 type DNSResult struct {
-	Host           string
-	ResolutionTime float64 // ms
-	ResolvedIPs    []string
-	Error          string
+	Host           string   `json:"host"`
+	ResolutionTime float64  `json:"resolution_time"` // ms
+	ResolvedIPs    []string `json:"resolved_ips"`
+	Error          string   `json:"error,omitempty"`
 }
 
 func MeasureDNS(host string) DNSResult {

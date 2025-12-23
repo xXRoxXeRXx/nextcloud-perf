@@ -100,7 +100,12 @@ func (s *Server) HandleEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		case res := <-s.ResultChan:
 			// Priority: Send result first
-			b, _ := json.Marshal(res)
+			b, err := json.Marshal(res)
+			if err != nil {
+				fmt.Fprintf(w, "data: JSON Marshal Error: %v\n\n", err)
+				flusher.Flush()
+				continue
+			}
 			fmt.Fprintf(w, "event: result\ndata: %s\n\n", string(b))
 			flusher.Flush()
 			// Don't return - keep connection for potential future results
@@ -128,6 +133,17 @@ type RunRequest struct {
 	URL  string `json:"url"`
 	User string `json:"user"`
 	Pass string `json:"pass"`
+}
+
+// Helper to convert []error to []string
+func errsToStrings(errs []error) []string {
+	var strs []string
+	for _, e := range errs {
+		if e != nil {
+			strs = append(strs, e.Error())
+		}
+	}
+	return strs
 }
 
 func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
@@ -163,6 +179,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 				Usage: sys.RAMUsage,
 			}
 			s.Broadcast(fmt.Sprintf("System: %s | CPU: %.1f%% | RAM: %.1f%% used", sys.OS, sys.CPUUsage, sys.RAMUsage))
+			s.SendResult(rpt)
 		}
 
 		// 1b. LOCAL NETWORK INFO
@@ -173,6 +190,22 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 			s.Broadcast(fmt.Sprintf("Network: %s (%s)", localNet.ConnectionType, localNet.PrimaryIF))
 		} else {
 			s.Broadcast("Network: Could not detect local network")
+		}
+
+		// 1c. REFERENCE SPEEDTEST
+		s.Broadcast("Running Reference Speedtest (Speedtest.net)...")
+		stRes, err := network.RunSpeedtest(func(msg string) {
+			s.Broadcast("Speedtest: " + msg)
+		})
+		if err != nil {
+			s.Broadcast(fmt.Sprintf("Speedtest Warning: %v", err))
+			// Ensure we send an empty result with error so UI knows it finished/failed
+			rpt.Speedtest = &network.SpeedtestResult{Error: err.Error()}
+			s.SendResult(rpt)
+		} else {
+			rpt.Speedtest = stRes
+			s.Broadcast(fmt.Sprintf("Ref Speed: %.2f Mbps Down / %.2f Mbps Up", stRes.DownloadSpeed, stRes.UploadSpeed))
+			s.SendResult(rpt)
 		}
 
 		// 2. NETWORK - Parse URL properly using net/url
@@ -193,22 +226,37 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 			s.Broadcast(fmt.Sprintf("DNS Error: %s", dnsRes.Error))
 		} else {
 			s.Broadcast(fmt.Sprintf("DNS: Resolved %s in %.2fms", hostOnly, dnsRes.ResolutionTime))
+			s.SendResult(rpt)
 		}
 
 		// B. Detailed Ping
 		s.Broadcast("Running TCP Ping (10 packets)...")
 		tcpTarget := hostOnly
-		if _, _, err := net.SplitHostPort(tcpTarget); err != nil {
-			tcpTarget = fmt.Sprintf("%s:443", tcpTarget)
+		if parsedURL.Port() != "" {
+			tcpTarget = net.JoinHostPort(hostOnly, parsedURL.Port())
+		} else {
+			if parsedURL.Scheme == "http" {
+				tcpTarget = net.JoinHostPort(hostOnly, "80")
+			} else {
+				tcpTarget = net.JoinHostPort(hostOnly, "443")
+			}
 		}
 
+		s.Broadcast(fmt.Sprintf("Pinging %s...", tcpTarget))
 		pingStats, err := network.MeasureDetailedTCPPing(tcpTarget, 10, 2*time.Second)
 		if err != nil {
 			s.Broadcast(fmt.Sprintf("Ping Error: %v", err))
+			// Set 100% packet loss on error
+			rpt.PingStats = network.DetailedPingStats{
+				Host:       tcpTarget,
+				PacketLoss: 100.0,
+			}
+			s.SendResult(rpt)
 		} else {
 			rpt.PingStats = pingStats
 			s.Broadcast(fmt.Sprintf("Ping: Avg=%.2fms | Min=%.2fms | Max=%.2fms | Loss=%.1f%%",
 				pingStats.AvgMs, pingStats.MinMs, pingStats.MaxMs, pingStats.PacketLoss))
+			s.SendResult(rpt)
 		}
 
 		// C. Traceroute
@@ -242,54 +290,58 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		client.CreateDirectory(testFolder)
 
 		// 4. BENCHMARKS
-		// Small Files: 10 x 512KB
-		s.Broadcast("Starting Small Files Test (10 x 512KB)...")
-		resSmall, err := benchmark.RunSmallFiles(client, testFolder, "test_small_", 10, 512*1024, 5)
+		// Small Files: 5 x 512KB
+		s.Broadcast("Starting Small Files Test (5 x 512KB)...")
+		resSmall, err := benchmark.RunSmallFiles(client, testFolder, "test_small_", 5, 512*1024, 5)
 		if err != nil {
-			rpt.SmallFiles.Errors = []error{err}
+			rpt.SmallFiles.Errors = []string{err.Error()}
 			s.Broadcast(fmt.Sprintf("Small Files Error: %v", err))
 		} else {
-			rpt.SmallFiles = report.SpeedResult{SpeedMBps: resSmall.SpeedMBps, Duration: resSmall.Duration, Errors: resSmall.Errors}
+			rpt.SmallFiles = report.SpeedResult{SpeedMBps: resSmall.SpeedMBps, Duration: resSmall.Duration, Errors: errsToStrings(resSmall.Errors)}
 			s.Broadcast(fmt.Sprintf("Small Files Upload: %.2f MB/s", resSmall.SpeedMBps))
 		}
 
 		// Small Files Download
-		s.Broadcast("Starting Small Files Download...")
-		resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_small_", 10, 5)
+		s.Broadcast("Starting Small Files Download (5 x 512KB)...")
+		resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_small_", 5, 5)
 		if err != nil {
-			rpt.SmallFilesDown.Errors = []error{err}
+			rpt.SmallFilesDown.Errors = []string{err.Error()}
 			s.Broadcast(fmt.Sprintf("Download Error: %v", err))
 		} else {
-			rpt.SmallFilesDown = report.SpeedResult{SpeedMBps: resSmallDown.SpeedMBps, Duration: resSmallDown.Duration, Errors: resSmallDown.Errors}
+			rpt.SmallFilesDown = report.SpeedResult{SpeedMBps: resSmallDown.SpeedMBps, Duration: resSmallDown.Duration, Errors: errsToStrings(resSmallDown.Errors)}
 			s.Broadcast(fmt.Sprintf("Small Files Download: %.2f MB/s", resSmallDown.SpeedMBps))
 		}
 
-		// Medium Files: 5 x 5MB (sequential for accurate speed measurement)
-		s.Broadcast("Starting Medium Files Test (5 x 5MB)...")
-		resMedium, err := benchmark.RunSmallFiles(client, testFolder, "test_medium_", 5, 5*1024*1024, 1)
+		// Medium Files: 3 x 5MB (sequential for accurate speed measurement)
+		s.Broadcast("Starting Medium Files Test (3 x 5MB)...")
+		resMedium, err := benchmark.RunSmallFiles(client, testFolder, "test_medium_", 3, 5*1024*1024, 1)
 		if err != nil {
-			rpt.MediumFiles.Errors = []error{err}
+			rpt.MediumFiles.Errors = []string{err.Error()}
 			s.Broadcast(fmt.Sprintf("Medium Files Error: %v", err))
 		} else {
-			rpt.MediumFiles = report.SpeedResult{SpeedMBps: resMedium.SpeedMBps, Duration: resMedium.Duration, Errors: resMedium.Errors}
+			rpt.MediumFiles = report.SpeedResult{SpeedMBps: resMedium.SpeedMBps, Duration: resMedium.Duration, Errors: errsToStrings(resMedium.Errors)}
 			s.Broadcast(fmt.Sprintf("Medium Files Upload: %.2f MB/s", resMedium.SpeedMBps))
 		}
 
 		// Medium Files Download
-		s.Broadcast("Starting Medium Files Download...")
-		resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_medium_", 5, 1)
+		s.Broadcast("Starting Medium Files Download (3 x 5MB)...")
+		resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_medium_", 3, 1)
 		if err != nil {
-			rpt.MediumFilesDown.Errors = []error{err}
+			rpt.MediumFilesDown.Errors = []string{err.Error()}
 			s.Broadcast(fmt.Sprintf("Medium Download Error: %v", err))
 		} else {
-			rpt.MediumFilesDown = report.SpeedResult{SpeedMBps: resMediumDown.SpeedMBps, Duration: resMediumDown.Duration, Errors: resMediumDown.Errors}
+			rpt.MediumFilesDown = report.SpeedResult{SpeedMBps: resMediumDown.SpeedMBps, Duration: resMediumDown.Duration, Errors: errsToStrings(resMediumDown.Errors)}
 			s.Broadcast(fmt.Sprintf("Medium Files Download: %.2f MB/s", resMediumDown.SpeedMBps))
 		}
 
-		// Large File: 512MB with 10MB chunks
-		s.Broadcast("Starting Large File Test (512MB with Chunking)...")
-		resLarge, err := benchmark.RunLargeFile(client, testFolder, 512*1024*1024, true)
-		rpt.LargeFile = report.SpeedResult{SpeedMBps: resLarge.SpeedMBps, Duration: resLarge.Duration, Errors: resLarge.Errors}
+		// Large File: 256MB with Chunking
+		s.Broadcast("Starting Large File Test (256MB with Chunking)...")
+		resLarge, err := benchmark.RunLargeFile(client, testFolder, 256*1024*1024, true)
+		if err != nil {
+			rpt.LargeFile.Errors = []string{err.Error()}
+			s.Broadcast(fmt.Sprintf("Large File Error: %v", err))
+		}
+		rpt.LargeFile = report.SpeedResult{SpeedMBps: resLarge.SpeedMBps, Duration: resLarge.Duration, Errors: errsToStrings(resLarge.Errors)}
 		if len(resLarge.Errors) > 0 {
 			s.Broadcast(fmt.Sprintf("Large File Warning: %v", resLarge.Errors))
 		}
@@ -299,10 +351,10 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		s.Broadcast("Starting Large File Download...")
 		resLargeDown, err := benchmark.RunDownloadLargeFile(client, testFolder)
 		if err != nil {
-			rpt.LargeFileDown.Errors = []error{err}
+			rpt.LargeFileDown.Errors = []string{err.Error()}
 			s.Broadcast(fmt.Sprintf("Large Download Error: %v", err))
 		} else {
-			rpt.LargeFileDown = report.SpeedResult{SpeedMBps: resLargeDown.SpeedMBps, Duration: resLargeDown.Duration, Errors: resLargeDown.Errors}
+			rpt.LargeFileDown = report.SpeedResult{SpeedMBps: resLargeDown.SpeedMBps, Duration: resLargeDown.Duration, Errors: errsToStrings(resLargeDown.Errors)}
 			s.Broadcast(fmt.Sprintf("Large File Download: %.2f MB/s", resLargeDown.SpeedMBps))
 		}
 
@@ -324,6 +376,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 			// Small delay to ensure all log messages are flushed before result
 			time.Sleep(100 * time.Millisecond)
+			rpt.Completed = true
 			s.SendResult(rpt)
 		}
 	}()

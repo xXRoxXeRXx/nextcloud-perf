@@ -2,6 +2,7 @@ package webdav
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -50,7 +51,10 @@ func NewClient(url, user, pass string, logFunc func(string)) *Client {
 		Username: user,
 		Password: pass,
 		Client: &http.Client{
-			Timeout: 5 * time.Minute, // Increased timeout for slow connections and large chunks
+			Timeout: 5 * time.Minute,
+			Transport: &http.Transport{
+				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+			},
 		},
 		LogFunc: logFunc,
 	}
@@ -94,14 +98,17 @@ func (c *Client) GetCapabilities() (*CapabilitiesResponse, error) {
 }
 
 // UploadSimple performs a standard PUT upload
-func (c *Client) UploadSimple(remotePath string, data io.Reader) (time.Duration, error) {
+func (c *Client) UploadSimple(remotePath string, data io.Reader, size int64) (time.Duration, error) {
 	// Construct full URL: BaseURL + /remote.php/dav/files/USER/ + remotePath
 	// NOTE: This assumes BaseURL is the root. Ideally we detect the webroot.
 	targetURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, remotePath)
 
 	start := time.Now()
-	c.LogFunc(fmt.Sprintf("PUT simple: %s", targetURL))
+	c.LogFunc(fmt.Sprintf("PUT simple: %s (%d bytes)", targetURL, size))
 	req, err := http.NewRequest("PUT", targetURL, data)
+	if size > 0 {
+		req.ContentLength = size
+	}
 	if err != nil {
 		return 0, err
 	}
