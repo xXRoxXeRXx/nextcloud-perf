@@ -2,6 +2,7 @@ package webdav
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -44,5 +45,44 @@ func TestGetCapabilities(t *testing.T) {
 	}
 	if !caps.Ocs.Data.Capabilities.Files.BigFileChunking {
 		t.Error("Expected BigFileChunking to be true")
+	}
+}
+
+func TestDownload(t *testing.T) {
+	expectedContent := "Hello, World! This is a test file."
+
+	// Mock Server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			t.Errorf("Expected GET, got %s", r.Method)
+		}
+		// Basic check for path structure
+		if r.URL.Path != "/remote.php/dav/files/testuser/test.txt" {
+			t.Errorf("Unexpected path: %s", r.URL.Path)
+		}
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte(expectedContent))
+	}))
+	defer ts.Close()
+
+	// Test Client
+	client := NewClient(ts.URL, "testuser", "testpass", nil)
+
+	// Execute Download
+	rc, err := client.Download("/test.txt")
+	if err != nil {
+		t.Fatalf("Failed to download: %v", err)
+	}
+	defer rc.Close()
+
+	// Verify Content
+	content, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatalf("Failed to read content: %v", err)
+	}
+
+	if string(content) != expectedContent {
+		t.Errorf("Expected content %q, got %q", expectedContent, string(content))
 	}
 }

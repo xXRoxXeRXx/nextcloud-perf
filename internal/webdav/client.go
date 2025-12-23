@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -118,6 +119,30 @@ func (c *Client) UploadSimple(remotePath string, data io.Reader) (time.Duration,
 	}
 
 	return time.Since(start), nil
+}
+
+// Download retrieves a file and returns a ReadCloser
+func (c *Client) Download(remotePath string) (io.ReadCloser, error) {
+	targetURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, strings.TrimPrefix(remotePath, "/"))
+	c.LogFunc(fmt.Sprintf("GET: %s", targetURL))
+
+	req, err := http.NewRequest("GET", targetURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(c.Username, c.Password)
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		resp.Body.Close()
+		return nil, fmt.Errorf("download failed: %s", resp.Status)
+	}
+
+	return resp.Body, nil
 }
 
 // UploadChunked performs a Chunking V2 Upload

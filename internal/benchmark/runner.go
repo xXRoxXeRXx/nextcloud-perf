@@ -161,3 +161,109 @@ func RunLargeFile(client *webdav.Client, basePath string, size int64, useChunkin
 		Errors:    errs,
 	}, nil
 }
+
+// DiscardReader reads from r and discards everything (like /dev/null), counting bytes
+func (z *ZeroReader) ReadFrom(r io.Reader) (n int64, err error) {
+	buf := make([]byte, 32*1024)
+	for {
+		nr, er := r.Read(buf)
+		if nr > 0 {
+			n += int64(nr)
+		}
+		if er != nil {
+			if er == io.EOF {
+				return n, nil
+			}
+			return n, er
+		}
+	}
+}
+
+func RunDownloadSmallFiles(client *webdav.Client, basePath string, count int, parallel int) (*Result, error) {
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, parallel)
+
+	start := time.Now()
+	var errs []error
+	var mu sync.Mutex
+	var totalBytes int64
+
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			filename := fmt.Sprintf("%s/test_small_%d.bin", basePath, idx)
+			rc, err := client.Download(filename)
+			if err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
+			defer rc.Close()
+
+			// Read and discard
+			written, _ := io.Copy(io.Discard, rc)
+
+			mu.Lock()
+			totalBytes += written
+			mu.Unlock()
+		}(i)
+	}
+	wg.Wait()
+
+	duration := time.Since(start)
+
+	var mbps float64
+	if duration.Seconds() > 0 {
+		mbps = float64(totalBytes) / 1024 / 1024 / duration.Seconds()
+	}
+
+	return &Result{
+		Scenario:  "Small Files Download",
+		Files:     count,
+		TotalSize: totalBytes,
+		Duration:  duration,
+		SpeedMBps: mbps,
+		Errors:    errs,
+	}, nil
+}
+
+func RunDownloadLargeFile(client *webdav.Client, basePath string) (*Result, error) {
+	filename := fmt.Sprintf("%s/test_large.bin", basePath)
+
+	start := time.Now()
+	rc, err := client.Download(filename)
+
+	var totalBytes int64
+	var errs []error
+
+	if err != nil {
+		errs = append(errs, err)
+	} else {
+		defer rc.Close()
+		totalBytes, err = io.Copy(io.Discard, rc)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	duration := time.Since(start)
+
+	var mbps float64
+	if duration.Seconds() > 0 {
+		mbps = float64(totalBytes) / 1024 / 1024 / duration.Seconds()
+	}
+
+	return &Result{
+		Scenario:  "Large File Download",
+		Files:     1,
+		TotalSize: totalBytes,
+		Duration:  duration,
+		SpeedMBps: mbps,
+		Errors:    errs,
+	}, nil
+}

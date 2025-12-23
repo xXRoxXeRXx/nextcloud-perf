@@ -27,15 +27,18 @@ type ReportData struct {
 	SystemOS    string
 	CPU         CPUInfo
 	RAM         RAMInfo
-	
-	LocalNetwork  network.LocalNetworkInfo
-	PingStats     network.DetailedPingStats
-	DNS           network.DNSResult
-	Traceroute    []string
-	
-	SmallFiles  SpeedResult
-	MediumFiles SpeedResult
-	LargeFile   SpeedResult
+
+	LocalNetwork network.LocalNetworkInfo
+	PingStats    network.DetailedPingStats
+	DNS          network.DNSResult
+	Traceroute   []string
+
+	SmallFiles      SpeedResult
+	SmallFilesDown  SpeedResult
+	MediumFiles     SpeedResult
+	MediumFilesDown SpeedResult
+	LargeFile       SpeedResult
+	LargeFileDown   SpeedResult
 }
 
 type SpeedResult struct {
@@ -190,34 +193,70 @@ const htmlTemplate = `
             <div class="grid">
                 <div class="card">
                     <div class="metric-label">Small Files (10 x 512KB)</div>
-                    <div class="metric-value">{{printf "%.2f MB/s" .Data.SmallFiles.SpeedMBps}}</div>
-                    <div class="metric-label">Duration: {{.Data.SmallFiles.Duration}}</div>
+                    <div style="margin-top: 10px;">
+                        <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.SmallFiles.SpeedMBps}}
+                        <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFiles.Duration.Seconds}})</span>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.SmallFilesDown.SpeedMBps}}
+                        <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFilesDown.Duration.Seconds}})</span>
+                    </div>
                     {{if .Data.SmallFiles.Errors}}
                     <div class="error-box">
-                        <strong>Errors:</strong><br>
+                        <strong>Up Errors:</strong><br>
                         {{range .Data.SmallFiles.Errors}}- {{.}}<br>{{end}}
+                    </div>
+                    {{end}}
+                     {{if .Data.SmallFilesDown.Errors}}
+                    <div class="error-box">
+                        <strong>Down Errors:</strong><br>
+                        {{range .Data.SmallFilesDown.Errors}}- {{.}}<br>{{end}}
                     </div>
                     {{end}}
                 </div>
                 <div class="card">
                     <div class="metric-label">Medium Files (5 x 5MB)</div>
-                    <div class="metric-value">{{printf "%.2f MB/s" .Data.MediumFiles.SpeedMBps}}</div>
-                    <div class="metric-label">Duration: {{.Data.MediumFiles.Duration}}</div>
+                      <div style="margin-top: 10px;">
+                        <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.MediumFiles.SpeedMBps}}
+                        <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFiles.Duration.Seconds}})</span>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.MediumFilesDown.SpeedMBps}}
+                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFilesDown.Duration.Seconds}})</span>
+                    </div>
                     {{if .Data.MediumFiles.Errors}}
                     <div class="error-box">
-                        <strong>Errors:</strong><br>
+                        <strong>Up Errors:</strong><br>
                         {{range .Data.MediumFiles.Errors}}- {{.}}<br>{{end}}
+                    </div>
+                    {{end}}
+                     {{if .Data.MediumFilesDown.Errors}}
+                    <div class="error-box">
+                        <strong>Down Errors:</strong><br>
+                        {{range .Data.MediumFilesDown.Errors}}- {{.}}<br>{{end}}
                     </div>
                     {{end}}
                 </div>
                 <div class="card">
-                    <div class="metric-label">Large File (512MB Chunked)</div>
-                    <div class="metric-value">{{printf "%.2f MB/s" .Data.LargeFile.SpeedMBps}}</div>
-                    <div class="metric-label">Duration: {{.Data.LargeFile.Duration}}</div>
+                     <div class="metric-label">Large File (512MB Chunked)</div>
+                      <div style="margin-top: 10px;">
+                        <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.LargeFile.SpeedMBps}}
+                        <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFile.Duration.Seconds}})</span>
+                    </div>
+                    <div style="margin-top: 5px;">
+                         <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.LargeFileDown.SpeedMBps}}
+                          <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFileDown.Duration.Seconds}})</span>
+                    </div>
                      {{if .Data.LargeFile.Errors}}
                     <div class="error-box">
-                        <strong>Errors:</strong><br>
+                         <strong>Up Errors:</strong><br>
                         {{range .Data.LargeFile.Errors}}- {{.}}<br>{{end}}
+                    </div>
+                    {{end}}
+                     {{if .Data.LargeFileDown.Errors}}
+                    <div class="error-box">
+                         <strong>Down Errors:</strong><br>
+                        {{range .Data.LargeFileDown.Errors}}- {{.}}<br>{{end}}
                     </div>
                     {{end}}
                 </div>

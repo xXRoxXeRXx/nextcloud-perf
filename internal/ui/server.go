@@ -250,7 +250,18 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 			s.Broadcast(fmt.Sprintf("Small Files Error: %v", err))
 		} else {
 			rpt.SmallFiles = report.SpeedResult{SpeedMBps: resSmall.SpeedMBps, Duration: resSmall.Duration, Errors: resSmall.Errors}
-			s.Broadcast(fmt.Sprintf("Small Files: %.2f MB/s (took %v)", resSmall.SpeedMBps, resSmall.Duration))
+			s.Broadcast(fmt.Sprintf("Small Files Upload: %.2f MB/s", resSmall.SpeedMBps))
+		}
+
+		// Small Files Download
+		s.Broadcast("Starting Small Files Download...")
+		resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, 10, 5)
+		if err != nil {
+			rpt.SmallFilesDown.Errors = []error{err}
+			s.Broadcast(fmt.Sprintf("Download Error: %v", err))
+		} else {
+			rpt.SmallFilesDown = report.SpeedResult{SpeedMBps: resSmallDown.SpeedMBps, Duration: resSmallDown.Duration, Errors: resSmallDown.Errors}
+			s.Broadcast(fmt.Sprintf("Small Files Download: %.2f MB/s", resSmallDown.SpeedMBps))
 		}
 
 		// Medium Files: 5 x 5MB (sequential for accurate speed measurement)
@@ -261,17 +272,39 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 			s.Broadcast(fmt.Sprintf("Medium Files Error: %v", err))
 		} else {
 			rpt.MediumFiles = report.SpeedResult{SpeedMBps: resMedium.SpeedMBps, Duration: resMedium.Duration, Errors: resMedium.Errors}
-			s.Broadcast(fmt.Sprintf("Medium Files: %.2f MB/s (took %v)", resMedium.SpeedMBps, resMedium.Duration))
+			s.Broadcast(fmt.Sprintf("Medium Files Upload: %.2f MB/s", resMedium.SpeedMBps))
+		}
+
+		// Medium Files Download
+		s.Broadcast("Starting Medium Files Download...")
+		resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, 5, 1)
+		if err != nil {
+			rpt.MediumFilesDown.Errors = []error{err}
+			s.Broadcast(fmt.Sprintf("Medium Download Error: %v", err))
+		} else {
+			rpt.MediumFilesDown = report.SpeedResult{SpeedMBps: resMediumDown.SpeedMBps, Duration: resMediumDown.Duration, Errors: resMediumDown.Errors}
+			s.Broadcast(fmt.Sprintf("Medium Files Download: %.2f MB/s", resMediumDown.SpeedMBps))
 		}
 
 		// Large File: 512MB with 10MB chunks
 		s.Broadcast("Starting Large File Test (512MB with Chunking)...")
 		resLarge, err := benchmark.RunLargeFile(client, testFolder, 512*1024*1024, true)
 		rpt.LargeFile = report.SpeedResult{SpeedMBps: resLarge.SpeedMBps, Duration: resLarge.Duration, Errors: resLarge.Errors}
-		if resLarge.Errors != nil && len(resLarge.Errors) > 0 {
+		if len(resLarge.Errors) > 0 {
 			s.Broadcast(fmt.Sprintf("Large File Warning: %v", resLarge.Errors))
 		}
-		s.Broadcast(fmt.Sprintf("Large File: %.2f MB/s (took %v)", resLarge.SpeedMBps, resLarge.Duration))
+		s.Broadcast(fmt.Sprintf("Large File Upload: %.2f MB/s", resLarge.SpeedMBps))
+
+		// Large File Download
+		s.Broadcast("Starting Large File Download...")
+		resLargeDown, err := benchmark.RunDownloadLargeFile(client, testFolder)
+		if err != nil {
+			rpt.LargeFileDown.Errors = []error{err}
+			s.Broadcast(fmt.Sprintf("Large Download Error: %v", err))
+		} else {
+			rpt.LargeFileDown = report.SpeedResult{SpeedMBps: resLargeDown.SpeedMBps, Duration: resLargeDown.Duration, Errors: resLargeDown.Errors}
+			s.Broadcast(fmt.Sprintf("Large File Download: %.2f MB/s", resLargeDown.SpeedMBps))
+		}
 
 		// CLEANUP FIRST (before report)
 		s.Broadcast("Cleaning up test files...")
