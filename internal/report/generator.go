@@ -2,6 +2,7 @@ package report
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"time"
 
@@ -47,6 +48,34 @@ type SpeedResult struct {
 	SpeedMBps float64
 	Duration  time.Duration
 	Errors    []string
+}
+
+func (s SpeedResult) GetQualityColor(limitMBps float64, isLarge bool) string {
+	if s.SpeedMBps <= 0 || limitMBps <= 0 {
+		return "#bdc3c7" // Gray
+	}
+	ratio := s.SpeedMBps / limitMBps
+	if isLarge {
+		if ratio > 0.85 {
+			return "#2ecc71"
+		} // Green
+		if ratio > 0.55 {
+			return "#f1c40f"
+		} // Yellow
+	} else {
+		if ratio > 0.50 {
+			return "#2ecc71"
+		} // Green
+		if ratio > 0.30 {
+			return "#f1c40f"
+		} // Yellow
+	}
+	return "#e74c3c" // Red
+}
+
+func (s SpeedResult) GetQualityDot(limitMBps float64, isLarge bool) template.HTML {
+	color := s.GetQualityColor(limitMBps, isLarge)
+	return template.HTML(fmt.Sprintf(`<span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background-color:%s;margin-left:5px;vertical-align:middle;box-shadow:0 0 5px %s;"></span>`, color, color))
 }
 
 // Embedded CSS to ensure the report is standalone
@@ -192,7 +221,11 @@ const htmlTemplate = `
             {{end}}
         </div>
 
+        {{$limitUp := 0.0}}{{$limitDown := 0.0}}
         {{if .Data.Speedtest}}
+            {{if gt .Data.Speedtest.UploadMBps 10.0}}{{$limitUp = 10.0}}{{else}}{{$limitUp = .Data.Speedtest.UploadMBps}}{{end}}
+            {{if gt .Data.Speedtest.DownloadMBps 50.0}}{{$limitDown = 50.0}}{{else}}{{$limitDown = .Data.Speedtest.DownloadMBps}}{{end}}
+        
         <div class="section">
             <h2>Reference Speed (Speedtest.net)</h2>
             {{if .Data.Speedtest.ISP}}
@@ -213,6 +246,7 @@ const htmlTemplate = `
                     <div class="metric-value">{{printf "%.2f MB/s" .Data.Speedtest.DownloadMBps}}</div>
                     <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f Mbps" .Data.Speedtest.DownloadSpeed}})</div>
                     <div class="metric-label" style="margin-top:5px;">Server: {{.Data.Speedtest.ServerName}}</div>
+                    <div class="metric-label" style="font-size: 0.8em; color: #888; font-style: italic;">(Cap: 50 MB/s per Nextcloud config)</div>
                 </div>
             </div>
         </div>
@@ -225,10 +259,12 @@ const htmlTemplate = `
                     <div class="metric-label">Small Files (5 x 512KB)</div>
                     <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.SmallFiles.SpeedMBps}}
+                        {{.Data.SmallFiles.GetQualityDot $limitUp false}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFiles.Duration.Seconds}})</span>
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.SmallFilesDown.SpeedMBps}}
+                        {{.Data.SmallFilesDown.GetQualityDot $limitDown false}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFilesDown.Duration.Seconds}})</span>
                     </div>
                     {{if .Data.SmallFiles.Errors}}
@@ -248,10 +284,12 @@ const htmlTemplate = `
                     <div class="metric-label">Medium Files (3 x 5MB)</div>
                       <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.MediumFiles.SpeedMBps}}
+                        {{.Data.MediumFiles.GetQualityDot $limitUp false}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFiles.Duration.Seconds}})</span>
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.MediumFilesDown.SpeedMBps}}
+                        {{.Data.MediumFilesDown.GetQualityDot $limitDown false}}
                          <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFilesDown.Duration.Seconds}})</span>
                     </div>
                     {{if .Data.MediumFiles.Errors}}
@@ -271,10 +309,12 @@ const htmlTemplate = `
                      <div class="metric-label">Large File (256MB Chunked)</div>
                       <div style="margin-top: 10px;">
                         <span style="color: #27ae60; font-weight: bold;">Upload:</span> {{printf "%.2f MB/s" .Data.LargeFile.SpeedMBps}}
+                        {{.Data.LargeFile.GetQualityDot $limitUp true}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFile.Duration.Seconds}})</span>
                     </div>
                     <div style="margin-top: 5px;">
                          <span style="color: #003d8f; font-weight: bold;">Download:</span> {{printf "%.2f MB/s" .Data.LargeFileDown.SpeedMBps}}
+                         {{.Data.LargeFileDown.GetQualityDot $limitDown true}}
                           <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFileDown.Duration.Seconds}})</span>
                     </div>
                      {{if .Data.LargeFile.Errors}}

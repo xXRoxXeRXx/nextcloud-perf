@@ -107,6 +107,38 @@
             font-weight: bold;
             font-size: 0.9em;
         }
+
+        .fail-dot {
+            color: #ff4757;
+        }
+
+        .quality-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .quality-green {
+            background-color: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+
+        .quality-yellow {
+            background-color: #f1c40f;
+            box-shadow: 0 0 8px #f1c40f;
+        }
+
+        .quality-red {
+            background-color: #e74c3c;
+            box-shadow: 0 0 8px #e74c3c;
+        }
+
+        .quality-none {
+            background-color: #bdc3c7;
+        }
     </style>
 </head>
 
@@ -181,12 +213,14 @@
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Small Files</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">5 x 512KB</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
+                        <span class="quality-indicator quality-none" id="qSmallUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
+                        <span class="quality-indicator quality-none" id="qSmallDown"></span>
                     </div>
                 </div>
                 <div
@@ -194,12 +228,14 @@
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Medium Files</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">3 x 5MB</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
+                        <span class="quality-indicator quality-none" id="qMedUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
+                        <span class="quality-indicator quality-none" id="qMedDown"></span>
                     </div>
                 </div>
                 <div
@@ -207,12 +243,14 @@
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Large File</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">256MB Chunked</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
+                        <span class="quality-indicator quality-none" id="qLargeUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span> <span
-                            style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
+                        <span class="quality-indicator quality-none" id="qLargeDown"></span>
                     </div>
                 </div>
             </div>
@@ -379,7 +417,23 @@
 
             setProgress(100);
 
-
+            function updateQualityDot(id, speed, limit, isLarge) {
+                const dot = document.getElementById(id);
+                if (!speed || speed <= 0 || !limit || limit <= 0) {
+                    dot.className = 'quality-indicator quality-none';
+                    return;
+                }
+                const ratio = speed / limit;
+                let quality = 'red';
+                if (isLarge) {
+                    if (ratio > 0.85) quality = 'green';
+                    else if (ratio > 0.55) quality = 'yellow';
+                } else {
+                    if (ratio > 0.50) quality = 'green';
+                    else if (ratio > 0.30) quality = 'yellow';
+                }
+                dot.className = `quality-indicator quality-${quality}`;
+            }
             // Only show results if completed
             if (data.Completed) {
                 document.getElementById('progressCard').style.display = 'none';
@@ -427,6 +481,17 @@
 
                     document.getElementById('refUp').innerText = `${uMBps} MB/s (${uMbps} Mbps)`;
                     document.getElementById('refDown').innerText = `${dMBps} MB/s (${dMbps} Mbps)`;
+
+                    // Evaluate Quality
+                    const limitUp = Math.min(uMBps, 10);
+                    const limitDown = Math.min(dMBps, 50);
+
+                    updateQualityDot('qSmallUp', data.SmallFiles.SpeedMBps, limitUp, false);
+                    updateQualityDot('qSmallDown', data.SmallFilesDown.SpeedMBps, limitDown, false);
+                    updateQualityDot('qMedUp', data.MediumFiles.SpeedMBps, limitUp, false);
+                    updateQualityDot('qMedDown', data.MediumFilesDown.SpeedMBps, limitDown, false);
+                    updateQualityDot('qLargeUp', data.LargeFile.SpeedMBps, limitUp, true);
+                    updateQualityDot('qLargeDown', data.LargeFileDown.SpeedMBps, limitDown, true);
 
                     // ISP Info
                     if (data.Speedtest.isp) {
