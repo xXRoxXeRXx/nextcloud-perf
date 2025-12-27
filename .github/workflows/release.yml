@@ -57,6 +57,28 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
+            # Install go-winres to embed icons on Windows
+            go install github.com/tc-hib/go-winres@latest
+            # Create a simple winres config
+            cat <<EOF > winres.json
+            {
+              "RT_GROUP_ICON": {
+                "APP": {
+                  "0000": ["assets/icon.png"]
+                }
+              },
+              "RT_VERSION": {
+                "#1": {
+                  "0000": {
+                    "FileDescription": "Nextcloud Performance Tool",
+                    "ProductName": "Nextcloud Perf",
+                    "OriginalFilename": "${BINARY_NAME}"
+                  }
+                }
+              }
+            }
+            EOF
+            $(go env GOPATH)/bin/go-winres make
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
