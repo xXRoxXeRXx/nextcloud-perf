@@ -29,6 +29,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - goos: linux
@@ -49,6 +50,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+      - name: Install dependencies
+        run: go mod download
       - name: Build Binary
         env:
           GOOS: ${{ matrix.goos }}
@@ -57,28 +60,17 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
-            # Install go-winres to embed icons on Windows
-            go install github.com/tc-hib/go-winres@latest
-            # Create a simple winres config
+            # Use go-winres directly via go run to avoid path issues
             cat <<EOF > winres.json
             {
               "RT_GROUP_ICON": {
                 "APP": {
                   "0000": ["assets/icon.png"]
                 }
-              },
-              "RT_VERSION": {
-                "#1": {
-                  "0000": {
-                    "FileDescription": "Nextcloud Performance Tool",
-                    "ProductName": "Nextcloud Perf",
-                    "OriginalFilename": "${BINARY_NAME}"
-                  }
-                }
               }
             }
             EOF
-            $(go env GOPATH)/bin/go-winres make
+            go run github.com/tc-hib/go-winres@latest make
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
@@ -99,6 +91,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+      - name: Debug - List Files
+        run: ls -R assets/
       - name: Build Universal Binary
         run: |
           mkdir -p bin
@@ -130,31 +124,35 @@ jobs:
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
             <string>1.0.0</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.13</string>
           </dict>
           </plist>
           EOF
 
-          # Create Icons
-          mkdir -p icon.iconset
-          sips -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
-          sips -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
-          sips -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
-          sips -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
-          sips -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
-          sips -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
-          sips -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
-          sips -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
-          iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
+          # Create Icons (macOS native)
+          if [ -f "assets/icon.png" ]; then
+            mkdir -p icon.iconset
+            sips -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
+            sips -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
+            sips -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
+            sips -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
+            sips -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
+            sips -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
+            sips -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
+            sips -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
+            iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
+          fi
       - name: Create .pkg Installer
         run: |
           mkdir -p pkg-root/Applications
-          mv "Nextcloud-Perf.app" pkg-root/Applications/
+          cp -R "Nextcloud-Perf.app" pkg-root/Applications/
           pkgbuild --root pkg-root --identifier "com.roxxer.nextcloud-perf" --version "1.0.0" --install-location "/" "Nextcloud-Perf-Installer.pkg"
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: macos-installer
-          path: "*.pkg"
+          path: Nextcloud-Perf-Installer.pkg
 
   github-release:
     name: Create GitHub Release
@@ -170,6 +168,8 @@ jobs:
           path: dist
           pattern: '*'
           merge-multiple: true
+      - name: Debug - List Dist
+        run: ls -R dist/
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
