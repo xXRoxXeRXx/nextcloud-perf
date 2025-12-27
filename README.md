@@ -54,7 +54,16 @@
    ```bash
    ./nextcloud-perf
    ```
-   *Die Weboberfläche öffnet sich automatisch unter [http://localhost:3000](http://localhost:3000).*
+
+---
+
+## 🎁 Installation & Downloads (macOS)
+
+Für macOS-Nutzer bieten wir einen komfortablen Installer an:
+
+1. Lade den aktuellen **Nextcloud-Perf-Installer.pkg** von der [Release-Seite](https://github.com/xxroxxerxx/nextcloud-perf/releases) herunter.
+2. Führe den Installer aus. Die App wird automatisch in deinem `Programme`-Ordner installiert.
+3. *Hinweis: Da die App noch nicht signiert ist, musst du beim ersten Start einen Rechtsklick auf die App machen und "Öffnen" wählen, um die macOS-Sicherheitswarnung zu bestätigen.*
 
 ---
 

@@ -30,8 +30,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
-        goarch: [amd64, arm64]
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -47,6 +58,7 @@ jobs:
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
           fi
+          mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -54,9 +66,77 @@ jobs:
           name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
 
+  macos-pkg:
+    name: Create macOS .pkg
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Build Universal Binary
+        run: |
+          mkdir -p bin
+          GOOS=darwin GOARCH=amd64 go build -o bin/nextcloud-perf-amd64 main.go
+          GOOS=darwin GOARCH=arm64 go build -o bin/nextcloud-perf-arm64 main.go
+          lipo -create -output bin/nextcloud-perf bin/nextcloud-perf-amd64 bin/nextcloud-perf-arm64
+      - name: Create .app Bundle
+        run: |
+          APP_DIR="Nextcloud-Perf.app"
+          mkdir -p "$APP_DIR/Contents/MacOS"
+          mkdir -p "$APP_DIR/Contents/Resources"
+          cp bin/nextcloud-perf "$APP_DIR/Contents/MacOS/"
+          
+          # Create Info.plist
+          cat <<EOF > "$APP_DIR/Contents/Info.plist"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>nextcloud-perf</string>
+            <key>CFBundleIconFile</key>
+            <string>icon</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.roxxer.nextcloud-perf</string>
+            <key>CFBundleName</key>
+            <string>Nextcloud Perf</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+          </dict>
+          </plist>
+          EOF
+
+          # Create Icons
+          mkdir -p icon.iconset
+          sips -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
+          sips -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
+          sips -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
+          sips -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
+          sips -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
+          sips -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
+          sips -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
+          sips -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
+          iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
+      - name: Create .pkg Installer
+        run: |
+          mkdir -p pkg-root/Applications
+          mv "Nextcloud-Perf.app" pkg-root/Applications/
+          pkgbuild --root pkg-root --identifier "com.roxxer.nextcloud-perf" --version "1.0.0" --install-location "/" "Nextcloud-Perf-Installer.pkg"
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: "*.pkg"
+
   github-release:
     name: Create GitHub Release
-    needs: release
+    needs: [release, macos-pkg]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -66,7 +146,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: binaries-*
+          pattern: '*'
           merge-multiple: true
       - name: Release
         uses: softprops/action-gh-release@v2
