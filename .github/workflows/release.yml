@@ -40,8 +40,10 @@ jobs:
       - name: Build EXE with Icon
         run: |
           go install github.com/akavel/rsrc@latest
+          # Use host environment for rsrc tool
           GOOS="" GOARCH="" $(go env GOPATH)/bin/rsrc -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
-          GOOS=windows GOARCH=${{ matrix.goarch }} go build -o "nextcloud-perf-windows-${{ matrix.goarch }}.exe" main.go
+          # Build the current directory package, NOT just main.go, to include .syso
+          GOOS=windows GOARCH=${{ matrix.goarch }} go build -v -o "nextcloud-perf-windows-${{ matrix.goarch }}.exe" .
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
@@ -60,11 +62,11 @@ jobs:
         with:
           go-version: '1.24'
       - name: Build Binary
-        run: GOOS=linux GOARCH=amd64 go build -o nextcloud-perf main.go
+        run: GOOS=linux GOARCH=amd64 go build -o nextcloud-perf .
       - name: Create AppImage
         run: |
-          # Install appimagetool
-          sudo wget -O /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+          # Install appimagetool (using continuous release)
+          sudo wget -O /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           sudo chmod +x /usr/local/bin/appimagetool
           
           # Prepare AppDir
