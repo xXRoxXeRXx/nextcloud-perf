@@ -195,18 +195,24 @@ const htmlTemplate = `
         {{if .Data.Speedtest}}
         <div class="section">
             <h2>Reference Speed (Speedtest.net)</h2>
+            {{if .Data.Speedtest.ISP}}
+            <div class="card" style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
+                <div class="metric-label">Internet Service Provider</div>
+                <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ISP}}</div>
+            </div>
+            {{end}}
             <div class="grid">
-                <div class="card" style="background: #e8f4fd; border-color: #b6e0fe;">
-                    <div class="metric-label">Download Speed</div>
-                    <div class="metric-value">{{printf "%.2f Mbps" .Data.Speedtest.DownloadSpeed}}</div>
-                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f MB/s" .Data.Speedtest.DownloadMBps}})</div>
-                    <div class="metric-label" style="margin-top:5px;">Server: {{.Data.Speedtest.ServerName}}</div>
-                </div>
                 <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
                     <div class="metric-label">Upload Speed</div>
-                    <div class="metric-value">{{printf "%.2f Mbps" .Data.Speedtest.UploadSpeed}}</div>
-                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f MB/s" .Data.Speedtest.UploadMBps}})</div>
+                    <div class="metric-value">{{printf "%.2f MB/s" .Data.Speedtest.UploadMBps}}</div>
+                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f Mbps" .Data.Speedtest.UploadSpeed}})</div>
                     <div class="metric-label" style="margin-top:5px;">Latency: {{.Data.Speedtest.Latency}}</div>
+                </div>
+                <div class="card" style="background: #e8f4fd; border-color: #b6e0fe;">
+                    <div class="metric-label">Download Speed</div>
+                    <div class="metric-value">{{printf "%.2f MB/s" .Data.Speedtest.DownloadMBps}}</div>
+                    <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f Mbps" .Data.Speedtest.DownloadSpeed}})</div>
+                    <div class="metric-label" style="margin-top:5px;">Server: {{.Data.Speedtest.ServerName}}</div>
                 </div>
             </div>
         </div>

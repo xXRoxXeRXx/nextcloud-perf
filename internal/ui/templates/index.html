@@ -237,16 +237,21 @@
             </div>
 
             <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
+            <div id="providerInfo"
+                style="display: none; background: #f0f4ff; padding: 10px 15px; border-radius: 8px; border: 1px solid #d1dbff; font-size: 0.9em; color: #445; margin-bottom: 15px; text-align: center;">
+                <i class="fas fa-network-wired"></i> Provider: <span id="resProvider"
+                    style="font-weight: bold; color: #003d8f;">--</span>
+            </div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div
-                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
-                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
-                </div>
                 <div
                     style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
                     <div style="font-size: 0.85em; color: #166534;">Upload (Ref)</div>
                     <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
+                </div>
+                <div
+                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
+                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
                 </div>
             </div>
 
@@ -415,13 +420,19 @@
                     document.getElementById('refDown').style.color = "#cc0000";
                     document.getElementById('refUp').style.color = "#cc0000";
                 } else {
-                    let dMbps = (data.Speedtest.download_speed || 0).toFixed(2);
-                    let dMBps = (data.Speedtest.download_mbps || 0).toFixed(2);
                     let uMbps = (data.Speedtest.upload_speed || 0).toFixed(2);
                     let uMBps = (data.Speedtest.upload_mbps || 0).toFixed(2);
+                    let dMbps = (data.Speedtest.download_speed || 0).toFixed(2);
+                    let dMBps = (data.Speedtest.download_mbps || 0).toFixed(2);
 
-                    document.getElementById('refDown').innerText = `${dMbps} Mbps (${dMBps} MB/s)`;
-                    document.getElementById('refUp').innerText = `${uMbps} Mbps (${uMBps} MB/s)`;
+                    document.getElementById('refUp').innerText = `${uMBps} MB/s (${uMbps} Mbps)`;
+                    document.getElementById('refDown').innerText = `${dMBps} MB/s (${dMbps} Mbps)`;
+
+                    // ISP Info
+                    if (data.Speedtest.isp) {
+                        document.getElementById('resProvider').innerText = data.Speedtest.isp;
+                        document.getElementById('providerInfo').style.display = 'block';
+                    }
                 }
             }
         });
