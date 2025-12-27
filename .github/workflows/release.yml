@@ -60,8 +60,10 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
-            echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres.json
-            # Use runner's native architecture for go run to avoid architecture detection errors
+            # Create the winres directory as expected by the tool
+            mkdir -p winres
+            echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres/winres.json
+            # Use runner's native architecture for go run
             GOOS=linux GOARCH=amd64 go run github.com/tc-hib/go-winres@latest make
           fi
           mkdir -p dist
