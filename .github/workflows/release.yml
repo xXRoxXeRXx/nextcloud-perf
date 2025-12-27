@@ -61,8 +61,8 @@ jobs:
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
             echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres.json
-            # Use host architecture for go run to avoid exec format error
-            GOOS="" GOARCH="" go run github.com/tc-hib/go-winres@latest make
+            # Use runner's native architecture for go run to avoid architecture detection errors
+            GOOS=linux GOARCH=amd64 go run github.com/tc-hib/go-winres@latest make
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
