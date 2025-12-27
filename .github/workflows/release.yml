@@ -60,9 +60,9 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
-            # Create a simple winres config using single-line strings or non-indented EOF
             echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres.json
-            go run github.com/tc-hib/go-winres@latest make
+            # Use host architecture for go run to avoid exec format error
+            GOOS="" GOARCH="" go run github.com/tc-hib/go-winres@latest make
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
@@ -83,8 +83,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-      - name: Debug - List Files
-        run: ls -R assets/
       - name: Build Universal Binary
         run: |
           mkdir -p bin
@@ -122,17 +120,17 @@ jobs:
           </plist>
           EOF
 
-          # Create Icons (macOS native)
+          # Create Icons (macOS native) - Use sips with explicit format to avoid warnings
           if [ -f "assets/icon.png" ]; then
             mkdir -p icon.iconset
-            sips -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
-            sips -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
-            sips -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
-            sips -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
-            sips -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
-            sips -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
-            sips -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
-            sips -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
+            sips -s format png -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
+            sips -s format png -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
+            sips -s format png -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
+            sips -s format png -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
+            sips -s format png -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
+            sips -s format png -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
+            sips -s format png -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
+            sips -s format png -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
             iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
           fi
       - name: Create .pkg Installer
