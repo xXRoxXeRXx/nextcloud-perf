@@ -62,7 +62,7 @@ jobs:
             BINARY_NAME="${BINARY_NAME}.exe"
             # Create the winres directory as expected by the tool
             mkdir -p winres
-            echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres/winres.json
+            echo '{"RT_GROUP_ICON":{"APP":{"0000":["../assets/icon.png"]}}}' > winres/winres.json
             # Use runner's native architecture for go run
             GOOS=linux GOARCH=amd64 go run github.com/tc-hib/go-winres@latest make
           fi
