@@ -18,6 +18,7 @@ type SpeedtestResult struct {
 	UploadSpeed   float64       `json:"upload_speed"`   // Mbps
 	DownloadMBps  float64       `json:"download_mbps"`  // MB/s
 	UploadMBps    float64       `json:"upload_mbps"`    // MB/s
+	ISP           string        `json:"isp"`            // Internet Service Provider
 	Error         string        `json:"error,omitempty"`
 }
 
@@ -28,6 +29,15 @@ func RunSpeedtest(logFunc func(string)) (*SpeedtestResult, error) {
 	serverList, err := speedtest.FetchServers()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch server list: %v", err)
+	}
+
+	// Fetch User info (ISP)
+	logFunc("Fetching provider information...")
+	user, err := speedtest.FetchUserInfo()
+	ispName := "Unknown"
+	if err == nil && user != nil {
+		ispName = user.Isp
+		logFunc(fmt.Sprintf("Provider: %s (IP: %s)", ispName, user.IP))
 	}
 
 	if len(serverList) == 0 {
@@ -85,6 +95,7 @@ func RunSpeedtest(logFunc func(string)) (*SpeedtestResult, error) {
 		UploadSpeed:   ulMbps,
 		DownloadMBps:  dlMBps,
 		UploadMBps:    ulMBps,
+		ISP:           ispName,
 	}, nil
 
 }
