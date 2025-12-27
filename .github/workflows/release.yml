@@ -60,16 +60,8 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
-            # Use go-winres directly via go run to avoid path issues
-            cat <<EOF > winres.json
-            {
-              "RT_GROUP_ICON": {
-                "APP": {
-                  "0000": ["assets/icon.png"]
-                }
-              }
-            }
-            EOF
+            # Create a simple winres config using single-line strings or non-indented EOF
+            echo '{"RT_GROUP_ICON":{"APP":{"0000":["assets/icon.png"]}}}' > winres.json
             go run github.com/tc-hib/go-winres@latest make
           fi
           mkdir -p dist
