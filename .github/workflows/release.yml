@@ -58,7 +58,8 @@ jobs:
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
             # Generate resource object file using rsrc (embedded in the final build)
-            go run github.com/akavel/rsrc@latest -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
+            # We clear GOOS/GOARCH for go run so it runs on the host (Linux)
+            GOOS="" GOARCH="" go run github.com/akavel/rsrc@latest -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
@@ -116,14 +117,14 @@ jobs:
 
           # Create Icons
           mkdir -p icon.iconset
-          sips -z 1024 1024 assets/icon.png --out icon.iconset/icon_512x512@2x.png
-          sips -z 512 512   assets/icon.png --out icon.iconset/icon_512x512.png
-          sips -z 256 256   assets/icon.png --out icon.iconset/icon_128x128@2x.png
-          sips -z 128 128   assets/icon.png --out icon.iconset/icon_128x128.png
-          sips -z 64 64     assets/icon.png --out icon.iconset/icon_32x32@2x.png
-          sips -z 32 32     assets/icon.png --out icon.iconset/icon_32x32.png
-          sips -z 32 32     assets/icon.png --out icon.iconset/icon_16x16@2x.png
-          sips -z 16 16     assets/icon.png --out icon.iconset/icon_16x16.png
+          sips -z 1024 1024 -s format png assets/icon.png --out icon.iconset/icon_512x512@2x.png
+          sips -z 512 512   -s format png assets/icon.png --out icon.iconset/icon_512x512.png
+          sips -z 256 256   -s format png assets/icon.png --out icon.iconset/icon_128x128@2x.png
+          sips -z 128 128   -s format png assets/icon.png --out icon.iconset/icon_128x128.png
+          sips -z 64 64     -s format png assets/icon.png --out icon.iconset/icon_32x32@2x.png
+          sips -z 32 32     -s format png assets/icon.png --out icon.iconset/icon_32x32.png
+          sips -z 32 32     -s format png assets/icon.png --out icon.iconset/icon_16x16@2x.png
+          sips -z 16 16     -s format png assets/icon.png --out icon.iconset/icon_16x16.png
           iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
       - name: Create .pkg Installer
         run: |
