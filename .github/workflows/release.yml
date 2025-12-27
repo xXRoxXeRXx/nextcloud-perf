@@ -23,26 +23,36 @@ jobs:
       - name: Run Tests
         run: go test -v ./...
 
-  release:
-    name: Build and Release
+  release-windows:
+    name: Build Windows EXE
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
-          - goos: windows
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Build EXE with Icon
+        run: |
+          go install github.com/akavel/rsrc@latest
+          GOOS="" GOARCH="" $(go env GOPATH)/bin/rsrc -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
+          GOOS=windows GOARCH=${{ matrix.goarch }} go build -o "nextcloud-perf-windows-${{ matrix.goarch }}.exe" main.go
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe-${{ matrix.goarch }}
+          path: "*.exe"
+
+  linux-appimage:
+    name: Create Linux AppImage
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -50,27 +60,31 @@ jobs:
         with:
           go-version: '1.24'
       - name: Build Binary
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+        run: GOOS=linux GOARCH=amd64 go build -o nextcloud-perf main.go
+      - name: Create AppImage
         run: |
-          BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            BINARY_NAME="${BINARY_NAME}.exe"
-            # Generate resource object file using rsrc (embedded in the final build)
-            # We clear GOOS/GOARCH for go run so it runs on the host (Linux)
-            GOOS="" GOARCH="" go run github.com/akavel/rsrc@latest -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
-          fi
-          mkdir -p dist
-          go build -o "dist/${BINARY_NAME}" main.go
-      - name: Upload Artifacts
+          # Install appimagetool
+          sudo wget -O /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+          
+          # Prepare AppDir
+          mkdir -p AppDir/usr/bin
+          cp nextcloud-perf AppDir/usr/bin/
+          cp assets/icon.png AppDir/nextcloud-perf.png
+          cp nextcloud-perf.desktop AppDir/
+          cp AppRun AppDir/
+          chmod +x AppDir/AppRun
+          
+          # Build AppImage (force x86_64 as we are on ubuntu-latest)
+          ARCH=x86_64 /usr/local/bin/appimagetool AppDir/ Nextcloud-Perf-x86_64.AppImage
+      - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/*
+          name: linux-appimage
+          path: "*.AppImage"
 
-  macos-pkg:
-    name: Create macOS .pkg
+  macos-dmg:
+    name: Create macOS DMG
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
@@ -110,7 +124,7 @@ jobs:
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
+            <string>2.0.0</string>
           </dict>
           </plist>
           EOF
@@ -126,20 +140,28 @@ jobs:
           sips -z 32 32     -s format png assets/icon.png --out icon.iconset/icon_16x16@2x.png
           sips -z 16 16     -s format png assets/icon.png --out icon.iconset/icon_16x16.png
           iconutil -c icns icon.iconset -o "$APP_DIR/Contents/Resources/icon.icns"
-      - name: Create .pkg Installer
+      - name: Create DMG
         run: |
-          mkdir -p pkg-root/Applications
-          mv "Nextcloud-Perf.app" pkg-root/Applications/
-          pkgbuild --root pkg-root --identifier "com.roxxer.nextcloud-perf" --version "1.0.0" --install-location "/" "Nextcloud-Perf-Installer.pkg"
-      - name: Upload Installer
+          brew install create-dmg
+          create-dmg \
+            --volname "Nextcloud Perf" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Nextcloud-Perf.app" 175 190 \
+            --hide-extension "Nextcloud-Perf.app" \
+            --app-drop-link 425 190 \
+            "Nextcloud-Perf.dmg" \
+            "Nextcloud-Perf.app"
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macos-installer
-          path: "*.pkg"
+          name: macos-dmg
+          path: "*.dmg"
 
   github-release:
     name: Create GitHub Release
-    needs: [release, macos-pkg]
+    needs: [release-windows, linux-appimage, macos-dmg]
     runs-on: ubuntu-latest
     permissions:
       contents: write

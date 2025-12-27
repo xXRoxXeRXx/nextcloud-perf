@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Nextcloud Perf
+Exec=nextcloud-perf
+Icon=nextcloud-perf
+Type=Application
+Categories=Utility;
+Comment=Nextcloud Performance Benchmarking Tool
+Terminal=true
