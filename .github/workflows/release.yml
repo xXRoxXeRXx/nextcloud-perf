@@ -57,10 +57,8 @@ jobs:
           BINARY_NAME="nextcloud-perf-${{ matrix.goos }}-${{ matrix.goarch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
-            # Install rsrc for icon embedding
-            go install github.com/akavel/rsrc@latest
-            # Generate resource object file (Go build handles this automatically)
-            $(go env GOPATH)/bin/rsrc -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
+            # Generate resource object file using rsrc (embedded in the final build)
+            go run github.com/akavel/rsrc@latest -ico assets/icon.ico -arch ${{ matrix.goarch }} -o icon.syso
           fi
           mkdir -p dist
           go build -o "dist/${BINARY_NAME}" main.go
