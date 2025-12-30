@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="Nextcloud Perf Logo" width="400">
 </p>
 
-<h1 align="center">Nextcloud Perf</h1>
+# Nextcloud Perf
 
 <p align="center">
   <strong>Ein leistungsstarkes Toolset zur detaillierten Performance-Analyse und Benchmarking von Nextcloud-Instanzen.</strong>
@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go Version">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge" alt="Platform">
+  <img src="https://img.shields.io/github/v/release/xxroxxerxx/nextcloud-perf?style=for-the-badge" alt="Release">
 </p>
 
 ---
@@ -20,24 +21,37 @@
 
 `nextcloud-perf` hilft dir dabei, Engpässe in deiner Nextcloud-Umgebung zu identifizieren. Ob Netzwerklatenz, langsame WebDAV-Operationen oder Ressourcenmangel auf dem Server – dieses Tool liefert dir die nötigen Daten direkt in einer übersichtlichen Weboberfläche.
 
-## ✨ Kernfunktionen
+## ✨ Kernfunktionen (v2.2.0)
 
 | Kategorie | Features |
 | :--- | :--- |
-| **🌐 Netzwerk** | Latenz- & Bandbreitenmessung, DNS-Check, Traceroute, Speedtest.net Integration |
-| **📁 WebDAV** | Benchmarking von Upload/Download-Geschwindigkeiten für kleine, mittlere und große Dateien |
-| **🖥️ System** | Ressourcenüberwachung (CPU, RAM, Disk) und Analyse von Server-Informationen |
-| **📊 Reporting** | Interaktives Web-Dashboard zur Live-Auswertung und Generierung von HTML-Reports |
+| **🌐 Netzwerk** | **Neu**: Referenz-Speedtest (Speedtest.net) & Ampelsystem für Latenz/Packet Loss |
+| **📁 WebDAV** | Upload/Download-Benchmark (Chunked Uploads 25MB, Unique Folders) |
+| **🧠 Analyse** | **Neu**: Automatische Qualitätsbewertung ("Exzellent", "Solide", "Optimierungsbedarf") |
+| **🛡️ Stabilität** | **Neu**: Robustes "Fail-Fast" Error Handling bei Verbindungsproblemen |
+| **📊 Reporting** | HTML-Report Generator mit detaillierten Metriken & Conclusion-Texten |
 
 ---
 
-## 🛠️ Installation & Setup
+## 🆕 Was ist neu in v2.2.0?
 
-### Voraussetzungen
-* **Go** 1.21 oder neuer (Empfohlen: Go 1.24 für beste Performance)
-* Ein lauffähiger Nextcloud-Server für WebDAV-Tests
+*   **Robustes Error Handling**: Keine "hängenden" Benchmarks mehr. Bei falschen Credentials oder Verbindungsfehlern bricht das Tool sofort ab und zeigt den Fehler an.
+*   **Performance Optimierung**: WebDAV-Uploads nutzen nun **25MB Chunks** für bessere Performance bei großen Dateien.
+*   **Qualitäts-Ampel**: Ping und Packet Loss werden automatisch bewertet (Grün/Gelb/Rot) und mit einem textuellen Fazit versehen.
+*   **Verbesserte UI**: Übersichtlicheres Dashboard mit logischerer Anordnung (Reference Speed oben) und deutlicherer Fehlerdarstellung.
 
-### In 3 Schritten startklar
+---
+
+## 🛠️ Installation & Downloads
+
+### 📦 Fertige Downloads (Empfohlen)
+Lade die aktuellste Version für dein Betriebssystem von der [Releases-Seite](https://github.com/xxroxxerxx/nextcloud-perf/releases) herunter:
+
+*   **Windows**: `.exe` (Einfach doppelklicken)
+*   **macOS**: `.pkg` Installer (Signierter Installer für einfache Installation)
+*   **Linux**: `.AppImage` (Ausführbar machen und starten)
+
+### 🧑‍💻 Manuell Bauen
 
 1. **Repository klonen:**
    ```bash
@@ -47,7 +61,7 @@
 
 2. **Binary bauen:**
    ```bash
-   go build -o nextcloud-perf main.go
+   go build -o nextcloud-perf .
    ```
 
 3. **Starten:**
@@ -57,58 +71,28 @@
 
 ---
 
-## 🎁 Installation & Downloads (macOS)
-
-Für macOS-Nutzer bieten wir einen komfortablen Installer an:
-
-1. Lade den aktuellen **Nextcloud-Perf-Installer.pkg** von der [Release-Seite](https://github.com/xxroxxerxx/nextcloud-perf/releases) herunter.
-2. Führe den Installer aus. Die App wird automatisch in deinem `Programme`-Ordner installiert.
-3. *Hinweis: Da die App noch nicht signiert ist, musst du beim ersten Start einen Rechtsklick auf die App machen und "Öffnen" wählen, um die macOS-Sicherheitswarnung zu bestätigen.*
-
----
-
 ## 📖 Nutzung
 
-### Web-Oberfläche (Empfohlen)
-Das Tool startet standardmäßig einen lokalen Webserver. Über das Dashboard kannst du:
-- Benchmarks mit einem Klick starten.
-- Konfigurationen für deine Nextcloud-Instanz (URL, User, Password) hinterlegen.
-- Historische Ergebnisse vergleichen.
-
-### Kommandozeile
-Für Automatisierung oder schnelle Checks bietet `nextcloud-perf` hilfreiche Flags:
-
-```bash
-./nextcloud-perf --help
-```
+1. Starte das Tool (`./nextcloud-perf` oder Doppelklick).
+2. Öffne den Browser unter `http://localhost:3000`.
+3. Gib deine Nextcloud-URL, Benutzername und Passwort ein. (Keine Sorge, Credentials bleiben lokal).
+4. Klicke auf "Start Benchmark" und warte auf die Ergebnisse.
 
 ---
 
-## 🏗️ Architektur & Struktur
+## 🏗️ Architektur
 
-Das Projekt ist modular aufgebaut, um Erweiterbarkeit zu gewährleisten:
+Dieses Projekt ist in Go geschrieben und nutzt eine moderne, modulare Architektur:
 
-```mermaid
-graph TD
-    A[Main Entry] --> B[Internal Modules]
-    B --> C[Network Analysis]
-    B --> D[WebDAV Benchmarks]
-    B --> E[System Monitoring]
-    B --> F[UI & Reporting]
-    F --> G[Web Frontend]
-```
-
-- `internal/` – Die Logik der verschiedenen Testmodule.
-- `web/` – HTML/JS/CSS für das interaktive Dashboard.
-- `main.go` – Der "Kleber", der alles verbindet.
+*   **Backend**: Go (net/http, native WebDAV implementation)
+*   **Frontend**: HTML5/CSS3 (Embedded Templates, Server-Sent Events)
+*   **Reporting**: HTML-Template Engine
 
 ---
 
 ## 📄 Lizenz
 
 Dieses Projekt ist unter der MIT-Lizenz lizenziert. Weitere Details findest du in der [LICENSE](LICENSE)-Datei.
-
----
 
 <p align="center">
   <sub>Entwickelt mit ❤️ für die Nextcloud-Community.</sub>
