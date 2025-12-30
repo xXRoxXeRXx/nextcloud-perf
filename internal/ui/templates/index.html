@@ -139,6 +139,26 @@
         .quality-none {
             background-color: #bdc3c7;
         }
+
+        .conclusion-text {
+            margin-top: 10px;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .text-green {
+            color: #27ae60;
+        }
+
+        .text-yellow {
+            color: #d68910;
+        }
+
+        .text-red {
+            color: #c0392b;
+        }
     </style>
 </head>
 
@@ -206,6 +226,33 @@
                 <h2 style="margin: 0;">Benchmark Completed!</h2>
             </div>
 
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
+            <div class="card"
+                style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <div class="metric-label" style="font-weight: bold;">Internet Service Provider</div>
+                        <div class="metric-value" style="font-size: 1.1em;" id="resProvider">--</div>
+                    </div>
+                    <div>
+                        <div class="metric-label" style="font-weight: bold;">Benchmark Server</div>
+                        <div class="metric-value" style="font-size: 1.1em;" id="resStServer">--</div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div
+                    style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 0.85em; color: #166534;">Upload (Ref)</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
+                </div>
+                <div
+                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
+                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
+                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
+                </div>
+            </div>
+
             <h3 style="margin-bottom: 15px;"><i class="fas fa-tachometer-alt"></i> Transfer Speed Results</h3>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
                 <div
@@ -222,6 +269,7 @@
                         <span style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
                         <span class="quality-indicator quality-none" id="qSmallDown"></span>
                     </div>
+                    <div class="conclusion-text" id="concSmall"></div>
                 </div>
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
@@ -237,11 +285,12 @@
                         <span style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
                         <span class="quality-indicator quality-none" id="qMedDown"></span>
                     </div>
+                    <div class="conclusion-text" id="concMed"></div>
                 </div>
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
                     <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Large File</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">256MB Chunked</div>
+                    <div style="font-size: 0.7em; opacity: 0.7;">256MB (25MB Chunks)</div>
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
@@ -252,44 +301,31 @@
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
                         <span class="quality-indicator quality-none" id="qLargeDown"></span>
                     </div>
+                    <div class="conclusion-text" id="concLarge"></div>
                 </div>
             </div>
 
             <h3 style="margin-bottom: 15px;"><i class="fas fa-network-wired"></i> Network Summary</h3>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div
-                    style="background: #f8f9ff; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
-                    <div style="font-size: 0.85em; color: #666;">Latency (Avg)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #003d8f;" id="resPing">--</div>
+                <div class="card">
+                    <div style="font-size: 0.85em; opacity: 0.8;">Avg Latency</div>
+                    <div class="metric-value">
+                        <span id="resPing">--</span>
+                        <span class="quality-indicator quality-none" id="qPing"></span>
+                    </div>
                 </div>
-                <div
-                    style="background: #f8f9ff; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
-                    <div style="font-size: 0.85em; color: #666;">DNS Resolution</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #003d8f;" id="resDNS">--</div>
+                <div class="card">
+                    <div style="font-size: 0.85em; opacity: 0.8;">Packet Loss</div>
+                    <div class="metric-value">
+                        <span id="resPacketLoss">--</span>
+                        <span class="quality-indicator quality-none" id="qLoss"></span>
+                    </div>
                 </div>
-                <div
-                    style="background: #f8f9ff; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
-                    <div style="font-size: 0.85em; color: #666;">Packet Loss</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #003d8f;" id="resLoss">--</div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
-            <div id="providerInfo"
-                style="display: none; background: #f0f4ff; padding: 10px 15px; border-radius: 8px; border: 1px solid #d1dbff; font-size: 0.9em; color: #445; margin-bottom: 15px; text-align: center;">
-                <i class="fas fa-network-wired"></i> Provider: <span id="resProvider"
-                    style="font-weight: bold; color: #003d8f;">--</span>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div
-                    style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
-                    <div style="font-size: 0.85em; color: #166534;">Upload (Ref)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
-                </div>
-                <div
-                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
-                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
+                <div class="card">
+                    <div style="font-size: 0.85em; opacity: 0.8;">DNS Resolution</div>
+                    <div class="metric-value">
+                        <span id="resDNS">--</span>
+                    </div>
                 </div>
             </div>
 
@@ -433,6 +469,27 @@
                     else if (ratio > 0.30) quality = 'yellow';
                 }
                 dot.className = `quality-indicator quality-${quality}`;
+                return quality;
+            }
+
+            function getConclusion(quality) {
+                switch (quality) {
+                    case 'green': return '<span class="text-green">Exzellente Verbindung</span>';
+                    case 'yellow': return '<span class="text-yellow">Solide Leistung</span>';
+                    case 'red': return '<span class="text-red">Optimierungsbedarf</span>';
+                    default: return '';
+                }
+            }
+
+            function updateConclusion(id, q1, q2) {
+                const el = document.getElementById(id);
+                // Worst-case performance wins the conclusion
+                let finalQ = 'green';
+                if (q1 === 'red' || q2 === 'red') finalQ = 'red';
+                else if (q1 === 'yellow' || q2 === 'yellow') finalQ = 'yellow';
+                else if (q1 === 'none' || q2 === 'none') finalQ = '';
+
+                el.innerHTML = getConclusion(finalQ);
             }
             // Only show results if completed
             if (data.Completed) {
@@ -442,22 +499,29 @@
 
 
             // Populate Speed Results (Upload)
-            document.getElementById('resSmall').innerText = (data.SmallFiles.SpeedMBps > 0) ? (data.SmallFiles.SpeedMBps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resMedium').innerText = (data.MediumFiles.SpeedMBps > 0) ? (data.MediumFiles.SpeedMBps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resLarge').innerText = (data.LargeFile.SpeedMBps > 0) ? (data.LargeFile.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resSmall').innerText = (data.SmallFiles.speed_mbps > 0) ? (data.SmallFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resMedium').innerText = (data.MediumFiles.speed_mbps > 0) ? (data.MediumFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resLarge').innerText = (data.LargeFile.speed_mbps > 0) ? (data.LargeFile.speed_mbps.toFixed(2) + " MB/s") : "--";
 
             // Populate Speed Results (Download)
-            document.getElementById('resSmallDown').innerText = (data.SmallFilesDown.SpeedMBps > 0) ? (data.SmallFilesDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resMediumDown').innerText = (data.MediumFilesDown.SpeedMBps > 0) ? (data.MediumFilesDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resLargeDown').innerText = (data.LargeFileDown.SpeedMBps > 0) ? (data.LargeFileDown.SpeedMBps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resSmallDown').innerText = (data.SmallFilesDown.speed_mbps > 0) ? (data.SmallFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resMediumDown').innerText = (data.MediumFilesDown.speed_mbps > 0) ? (data.MediumFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
+            document.getElementById('resLargeDown').innerText = (data.LargeFileDown.speed_mbps > 0) ? (data.LargeFileDown.speed_mbps.toFixed(2) + " MB/s") : "--";
 
             // Network Summary
             if (data.PingStats) {
-                // Check if ping stats are populated
-                if (data.PingStats.avg_ms > 0 || data.PingStats.packet_loss >= 0) {
-                    document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(1) + " ms";
-                    document.getElementById('resLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
-                }
+                document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
+                document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
+
+                let pingQ = 'green';
+                if (data.PingStats.avg_ms > 60) pingQ = 'red';
+                else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
+                document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
+
+                let lossQ = 'green';
+                if (data.PingStats.packet_loss > 1) lossQ = 'red';
+                else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
+                document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
             }
             if (data.DNS) {
                 if (data.DNS.resolution_time > 0) {
@@ -466,7 +530,6 @@
             }
 
             // Reference Speed
-            // Reference Speed
             if (data.Speedtest) {
                 if (data.Speedtest.error) {
                     document.getElementById('refDown').innerText = "Error";
@@ -474,29 +537,36 @@
                     document.getElementById('refDown').style.color = "#cc0000";
                     document.getElementById('refUp').style.color = "#cc0000";
                 } else {
-                    let uMbps = (data.Speedtest.upload_speed || 0).toFixed(2);
-                    let uMBps = (data.Speedtest.upload_mbps || 0).toFixed(2);
-                    let dMbps = (data.Speedtest.download_speed || 0).toFixed(2);
-                    let dMBps = (data.Speedtest.download_mbps || 0).toFixed(2);
+                    const uMbps = data.Speedtest.upload_speed || 0;
+                    const dMbps = data.Speedtest.download_speed || 0;
+                    const uMBps = data.Speedtest.upload_mbps || 0;
+                    const dMBps = data.Speedtest.download_mbps || 0;
 
-                    document.getElementById('refUp').innerText = `${uMBps} MB/s (${uMbps} Mbps)`;
-                    document.getElementById('refDown').innerText = `${dMBps} MB/s (${dMbps} Mbps)`;
+                    document.getElementById('refUp').innerText = `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`;
+                    document.getElementById('refDown').innerText = `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`;
 
                     // Evaluate Quality
                     const limitUp = Math.min(uMBps, 10);
                     const limitDown = Math.min(dMBps, 50);
 
-                    updateQualityDot('qSmallUp', data.SmallFiles.SpeedMBps, limitUp, false);
-                    updateQualityDot('qSmallDown', data.SmallFilesDown.SpeedMBps, limitDown, false);
-                    updateQualityDot('qMedUp', data.MediumFiles.SpeedMBps, limitUp, false);
-                    updateQualityDot('qMedDown', data.MediumFilesDown.SpeedMBps, limitDown, false);
-                    updateQualityDot('qLargeUp', data.LargeFile.SpeedMBps, limitUp, true);
-                    updateQualityDot('qLargeDown', data.LargeFileDown.SpeedMBps, limitDown, true);
+                    const qSUp = updateQualityDot('qSmallUp', data.SmallFiles.speed_mbps, limitUp, false);
+                    const qSDown = updateQualityDot('qSmallDown', data.SmallFilesDown.speed_mbps, limitDown, false);
+                    updateConclusion('concSmall', qSUp, qSDown);
 
-                    // ISP Info
+                    const qMUp = updateQualityDot('qMedUp', data.MediumFiles.speed_mbps, limitUp, false);
+                    const qMDown = updateQualityDot('qMedDown', data.MediumFilesDown.speed_mbps, limitDown, false);
+                    updateConclusion('concMed', qMUp, qMDown);
+
+                    const qLUp = updateQualityDot('qLargeUp', data.LargeFile.speed_mbps, limitUp, true);
+                    const qLDown = updateQualityDot('qLargeDown', data.LargeFileDown.speed_mbps, limitDown, true);
+                    updateConclusion('concLarge', qLUp, qLDown);
+
+                    // ISP & Server Info
                     if (data.Speedtest.isp) {
                         document.getElementById('resProvider').innerText = data.Speedtest.isp;
-                        document.getElementById('providerInfo').style.display = 'block';
+                    }
+                    if (data.Speedtest.server_name) {
+                        document.getElementById('resStServer').innerText = data.Speedtest.server_name;
                     }
                 }
             }

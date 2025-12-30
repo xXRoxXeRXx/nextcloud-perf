@@ -175,9 +175,9 @@ func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int6
 		return 0, fmt.Errorf("MKCOL failed: %s", resp.Status)
 	}
 
-	// 2. Upload Chunks (10MB default chunk size as requested)
+	// 2. Upload Chunks (25MB default chunk size as requested)
 	c.LogFunc("Uploading Chunks...")
-	chunkSize := int64(10 * 1024 * 1024)
+	chunkSize := int64(25 * 1024 * 1024)
 	buf := make([]byte, chunkSize)
 	chunkIndex := 0
 

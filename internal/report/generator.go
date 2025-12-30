@@ -45,9 +45,31 @@ type ReportData struct {
 }
 
 type SpeedResult struct {
-	SpeedMBps float64
-	Duration  time.Duration
-	Errors    []string
+	SpeedMBps float64       `json:"speed_mbps"`
+	Duration  time.Duration `json:"duration"`
+	Errors    []string      `json:"errors"`
+}
+
+// GetPingQualityDot returns an HTML span with a colored dot indicating ping quality.
+func GetPingQualityDot(p network.DetailedPingStats) template.HTML {
+	color := "#2ecc71" // green
+	if p.AvgMs > 60 {
+		color = "#e74c3c" // red
+	} else if p.AvgMs > 25 {
+		color = "#f1c40f" // yellow
+	}
+	return template.HTML(fmt.Sprintf(`<span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background-color:%s;margin-left:5px;vertical-align:middle;box-shadow:0 0 5px %s;"></span>`, color, color))
+}
+
+// GetLossQualityDot returns an HTML span with a colored dot indicating packet loss quality.
+func GetLossQualityDot(p network.DetailedPingStats) template.HTML {
+	color := "#2ecc71" // green
+	if p.PacketLoss > 1.0 {
+		color = "#e74c3c" // red
+	} else if p.PacketLoss > 0.0 {
+		color = "#f1c40f" // yellow
+	}
+	return template.HTML(fmt.Sprintf(`<span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background-color:%s;margin-left:5px;vertical-align:middle;box-shadow:0 0 5px %s;"></span>`, color, color))
 }
 
 func (s SpeedResult) GetQualityColor(limitMBps float64, isLarge bool) string {
@@ -76,6 +98,27 @@ func (s SpeedResult) GetQualityColor(limitMBps float64, isLarge bool) string {
 func (s SpeedResult) GetQualityDot(limitMBps float64, isLarge bool) template.HTML {
 	color := s.GetQualityColor(limitMBps, isLarge)
 	return template.HTML(fmt.Sprintf(`<span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background-color:%s;margin-left:5px;vertical-align:middle;box-shadow:0 0 5px %s;"></span>`, color, color))
+}
+
+func GetCombinedConclusion(up, down SpeedResult, limitUp, limitDown float64, isLarge bool) template.HTML {
+	qUp := up.GetQualityColor(limitUp, isLarge)
+	qDown := down.GetQualityColor(limitDown, isLarge)
+
+	// Determine worst-case
+	text := "Exzellente Verbindung"
+	class := "text-green"
+
+	if qUp == "#e74c3c" || qDown == "#e74c3c" {
+		text = "Optimierungsbedarf"
+		class = "text-red"
+	} else if qUp == "#f1c40f" || qDown == "#f1c40f" {
+		text = "Solide Leistung"
+		class = "text-yellow"
+	} else if qUp == "#bdc3c7" || qDown == "#bdc3c7" {
+		return ""
+	}
+
+	return template.HTML(fmt.Sprintf(`<div class="conclusion-text %s">%s</div>`, class, text))
 }
 
 // Embedded CSS to ensure the report is standalone
@@ -125,6 +168,16 @@ th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
 th { background-color: #f2f2f2; }
 .success-dot { color: green; }
 .fail-dot { color: red; }
+.conclusion-text {
+    margin-top: 10px;
+    font-size: 0.85em;
+    font-weight: bold;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+.text-green { color: #27ae60; }
+.text-yellow { color: #d68910; }
+.text-red { color: #c0392b; }
 `
 
 const htmlTemplate = `
@@ -187,9 +240,9 @@ const htmlTemplate = `
                 </div>
                 <div class="card">
                     <div class="metric-label">TCP Connect ({{.Data.PingStats.Count}} packets)</div>
-                    <div class="metric-value">Avg: {{printf "%.2f ms" .Data.PingStats.AvgMs}}</div>
+                    <div class="metric-value">Avg: {{printf "%.2f ms" .Data.PingStats.AvgMs}} {{getPingQualityDot .Data.PingStats}}</div>
                     <div class="metric-label">Min: {{printf "%.2f" .Data.PingStats.MinMs}} | Max: {{printf "%.2f" .Data.PingStats.MaxMs}}</div>
-                    <div class="metric-label">Loss: {{printf "%.1f%%" .Data.PingStats.PacketLoss}}</div>
+                    <div class="metric-label">Loss: {{printf "%.1f%%" .Data.PingStats.PacketLoss}} {{getLossQualityDot .Data.PingStats}}</div>
                 </div>
             </div>
 
@@ -225,15 +278,22 @@ const htmlTemplate = `
         {{if .Data.Speedtest}}
             {{if gt .Data.Speedtest.UploadMBps 10.0}}{{$limitUp = 10.0}}{{else}}{{$limitUp = .Data.Speedtest.UploadMBps}}{{end}}
             {{if gt .Data.Speedtest.DownloadMBps 50.0}}{{$limitDown = 50.0}}{{else}}{{$limitDown = .Data.Speedtest.DownloadMBps}}{{end}}
-        
         <div class="section">
             <h2>Reference Speed (Speedtest.net)</h2>
-            {{if .Data.Speedtest.ISP}}
             <div class="card" style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
-                <div class="metric-label">Internet Service Provider</div>
-                <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ISP}}</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    {{if .Data.Speedtest.ISP}}
+                    <div>
+                        <div class="metric-label">Internet Service Provider</div>
+                        <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ISP}}</div>
+                    </div>
+                    {{end}}
+                    <div>
+                        <div class="metric-label">Benchmark Server</div>
+                        <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ServerName}}</div>
+                    </div>
+                </div>
             </div>
-            {{end}}
             <div class="grid">
                 <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
                     <div class="metric-label">Upload Speed</div>
@@ -246,7 +306,6 @@ const htmlTemplate = `
                     <div class="metric-value">{{printf "%.2f MB/s" .Data.Speedtest.DownloadMBps}}</div>
                     <div class="metric-label" style="font-size: 0.9em; color: #666;">({{printf "%.2f Mbps" .Data.Speedtest.DownloadSpeed}})</div>
                     <div class="metric-label" style="margin-top:5px;">Server: {{.Data.Speedtest.ServerName}}</div>
-                    <div class="metric-label" style="font-size: 0.8em; color: #888; font-style: italic;">(Cap: 50 MB/s per Nextcloud config)</div>
                 </div>
             </div>
         </div>
@@ -267,6 +326,8 @@ const htmlTemplate = `
                         {{.Data.SmallFilesDown.GetQualityDot $limitDown false}}
                         <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.SmallFilesDown.Duration.Seconds}})</span>
                     </div>
+                    {{getCombinedConclusion .Data.SmallFiles .Data.SmallFilesDown $limitUp $limitDown false}}
+
                     {{if .Data.SmallFiles.Errors}}
                     <div class="error-box">
                         <strong>Up Errors:</strong><br>
@@ -292,6 +353,8 @@ const htmlTemplate = `
                         {{.Data.MediumFilesDown.GetQualityDot $limitDown false}}
                          <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.MediumFilesDown.Duration.Seconds}})</span>
                     </div>
+                    {{getCombinedConclusion .Data.MediumFiles .Data.MediumFilesDown $limitUp $limitDown false}}
+
                     {{if .Data.MediumFiles.Errors}}
                     <div class="error-box">
                         <strong>Up Errors:</strong><br>
@@ -317,6 +380,8 @@ const htmlTemplate = `
                          {{.Data.LargeFileDown.GetQualityDot $limitDown true}}
                           <span style="font-size: 0.8em; color: #666;">({{printf "%.2fs" .Data.LargeFileDown.Duration.Seconds}})</span>
                     </div>
+                    {{getCombinedConclusion .Data.LargeFile .Data.LargeFileDown $limitUp $limitDown true}}
+
                      {{if .Data.LargeFile.Errors}}
                     <div class="error-box">
                          <strong>Up Errors:</strong><br>
@@ -342,7 +407,13 @@ const htmlTemplate = `
 `
 
 func GenerateHTML(data ReportData) ([]byte, error) {
-	t, err := template.New("report").Parse(htmlTemplate)
+	funcMap := template.FuncMap{
+		"getPingQualityDot":     GetPingQualityDot,
+		"getLossQualityDot":     GetLossQualityDot,
+		"getCombinedConclusion": GetCombinedConclusion,
+	}
+
+	t, err := template.New("report").Funcs(funcMap).Parse(htmlTemplate)
 	if err != nil {
 		return nil, err
 	}

@@ -285,7 +285,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		rpt.ServerVer = caps.Ocs.Data.Version.String
 		s.Broadcast(fmt.Sprintf("Connected! Server: Nextcloud %s", rpt.ServerVer))
 
-		testFolder := "perf-test"
+		testFolder := fmt.Sprintf("perf-test-%d", time.Now().Unix())
 		s.Broadcast("Creating test directory...")
 		client.CreateDirectory(testFolder)
 
