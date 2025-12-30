@@ -106,20 +106,23 @@ func GetCombinedConclusion(up, down SpeedResult, limitUp, limitDown float64, isL
 	qDown := down.GetQualityColor(limitDown, isLarge)
 
 	// Determine worst-case
-	text := "Exzellente Verbindung"
+	key := "conc_excellent"
+	text := "Excellent connection"
 	class := "text-green"
 
 	if qUp == "#e74c3c" || qDown == "#e74c3c" {
-		text = "Optimierungsbedarf"
+		key = "conc_optimize"
+		text = "Needs optimization"
 		class = "text-red"
 	} else if qUp == "#f1c40f" || qDown == "#f1c40f" {
-		text = "Solide Leistung"
+		key = "conc_solid"
+		text = "Solid performance"
 		class = "text-yellow"
 	} else if qUp == "#bdc3c7" || qDown == "#bdc3c7" {
 		return ""
 	}
 
-	return template.HTML(fmt.Sprintf(`<div class="conclusion-text %s">%s</div>`, class, text))
+	return template.HTML(fmt.Sprintf(`<div class="conclusion-text %s" data-i18n="%s">%s</div>`, class, key, text))
 }
 
 // Embedded CSS to ensure the report is standalone
@@ -179,6 +182,20 @@ th { background-color: #f2f2f2; }
 .text-green { color: #27ae60; }
 .text-yellow { color: #d68910; }
 .text-red { color: #c0392b; }
+.lang-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 61, 143, 0.1);
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    color: var(--global--color-ionos-blue);
+    font-size: 0.9em;
+    border: 1px solid rgba(0, 61, 143, 0.2);
+    font-weight: bold;
+}
+.report-container { position: relative; }
 `
 
 const htmlTemplate = `
@@ -192,31 +209,34 @@ const htmlTemplate = `
 <body>
     <div class="report-container">
         <header>
-            <h1>Nextcloud Performance Report</h1>
-            <div class="meta">Generated: {{.Data.GeneratedAt.Format "2006-01-02 15:04:05"}}</div>
-            <div class="meta">Target: {{.Data.TargetURL}} | Server: {{.Data.ServerVer}}</div>
+            <div class="lang-toggle" onclick="toggleLanguage()">
+                🌐 <span id="currentLang">EN</span>
+            </div>
+            <h1 data-i18n="report_title">Nextcloud Performance Report</h1>
+            <div class="meta"><span data-i18n="meta_generated">Generated:</span> {{.Data.GeneratedAt.Format "2006-01-02 15:04:05"}}</div>
+            <div class="meta"><span data-i18n="meta_target">Target:</span> {{.Data.TargetURL}} | <span data-i18n="meta_server">Server:</span> {{.Data.ServerVer}}</div>
         </header>
 
         <div class="section">
-            <h2>System Information</h2>
+            <h2 data-i18n="section_system_info">System Information</h2>
             <div class="grid">
                 <div class="card">
-                    <div class="metric-label">Client OS</div>
+                    <div class="metric-label" data-i18n="label_client_os">Client OS</div>
                     <div>{{.Data.SystemOS}}</div>
-                    <div class="metric-label">CPU Model</div>
+                    <div class="metric-label" data-i18n="label_cpu_model">CPU Model</div>
                     <div style="font-size: 0.8em">{{.Data.CPU.Model}}</div>
-                    <div class="metric-label">CPU Usage: {{printf "%.1f%%" .Data.CPU.Usage}}</div>
+                    <div class="metric-label"><span data-i18n="label_cpu_usage">CPU Usage:</span> {{printf "%.1f%%" .Data.CPU.Usage}}</div>
                 </div>
                 <div class="card">
-                    <div class="metric-label">Memory (RAM)</div>
-                    <div>Total: {{.Data.RAM.Total}}</div>
-                    <div>Used: {{.Data.RAM.Used}} ({{printf "%.1f%%" .Data.RAM.Usage}})</div>
-                    <div>Free: {{.Data.RAM.Free}}</div>
+                    <div class="metric-label" data-i18n="label_memory_ram">Memory (RAM)</div>
+                    <div><span data-i18n="label_total">Total:</span> {{.Data.RAM.Total}}</div>
+                    <div><span data-i18n="label_used">Used:</span> {{.Data.RAM.Used}} ({{printf "%.1f%%" .Data.RAM.Usage}})</div>
+                    <div><span data-i18n="label_free">Free:</span> {{.Data.RAM.Free}}</div>
                 </div>
                 <div class="card">
-                    <div class="metric-label">Local Network</div>
+                    <div class="metric-label" data-i18n="label_local_network">Local Network</div>
                     <div class="metric-value">{{.Data.LocalNetwork.ConnectionType}}</div>
-                    <div class="metric-label">Primary Interface: {{.Data.LocalNetwork.PrimaryIF}}</div>
+                    <div class="metric-label"><span data-i18n="label_primary_if">Primary Interface:</span> {{.Data.LocalNetwork.PrimaryIF}}</div>
                     {{range .Data.LocalNetwork.Interfaces}}
                     <div style="font-size: 0.85em; margin-top: 5px;">
                         <strong>{{.Name}}</strong> ({{.Type}}): {{.IPAddress}}
@@ -230,28 +250,28 @@ const htmlTemplate = `
 
 
         <div class="section">
-            <h2>Network Diagnostics</h2>
+            <h2 data-i18n="section_network_diagnostics">Network Diagnostics</h2>
             <div class="grid">
                 <div class="card">
-                    <div class="metric-label">DNS Resolution</div>
+                    <div class="metric-label" data-i18n="label_dns">DNS Resolution</div>
                     <div class="metric-value">{{printf "%.2f ms" .Data.DNS.ResolutionTime}}</div>
                     <div class="metric-label">Resolved IPs:</div>
                     {{range .Data.DNS.ResolvedIPs}}<div>- {{.}}</div>{{end}}
                     {{if .Data.DNS.Error}}<div class="error-box">{{.Data.DNS.Error}}</div>{{end}}
                 </div>
                 <div class="card">
-                    <div class="metric-label">TCP Connect ({{.Data.PingStats.Count}} packets)</div>
-                    <div class="metric-value">Avg: {{printf "%.2f ms" .Data.PingStats.AvgMs}} {{getPingQualityDot .Data.PingStats}}</div>
-                    <div class="metric-label">Min: {{printf "%.2f" .Data.PingStats.MinMs}} | Max: {{printf "%.2f" .Data.PingStats.MaxMs}}</div>
-                    <div class="metric-label">Loss: {{printf "%.1f%%" .Data.PingStats.PacketLoss}} {{getLossQualityDot .Data.PingStats}}</div>
+                    <div class="metric-label"><span data-i18n="label_tcp_connect">TCP Connect</span> ({{.Data.PingStats.Count}} packets)</div>
+                    <div class="metric-value"><span data-i18n="label_avg">Avg:</span> {{printf "%.2f ms" .Data.PingStats.AvgMs}} {{getPingQualityDot .Data.PingStats}}</div>
+                    <div class="metric-label"><span data-i18n="label_min">Min:</span> {{printf "%.2f" .Data.PingStats.MinMs}} | <span data-i18n="label_max">Max:</span> {{printf "%.2f" .Data.PingStats.MaxMs}}</div>
+                    <div class="metric-label"><span data-i18n="label_packet_loss">Loss:</span> {{printf "%.1f%%" .Data.PingStats.PacketLoss}} {{getLossQualityDot .Data.PingStats}}</div>
                 </div>
             </div>
 
             <div style="margin-top:20px;">
                 <details>
-                    <summary style="cursor:pointer; color: #003d8f; font-weight:bold;">View Detailed Ping Results</summary>
+                    <summary style="cursor:pointer; color: #003d8f; font-weight:bold;" data-i18n="summary_view_ping">View Detailed Ping Results</summary>
                     <table>
-                        <thead><tr><th>Seq</th><th>Time (ms)</th><th>Status</th></tr></thead>
+                        <thead><tr><th data-i18n="th_seq">Seq</th><th data-i18n="th_time">Time (ms)</th><th data-i18n="th_status">Status</th></tr></thead>
                         <tbody>
                             {{range .Data.PingStats.Results}}
                             <tr>
@@ -280,17 +300,18 @@ const htmlTemplate = `
             {{if gt .Data.Speedtest.UploadMBps 10.0}}{{$limitUp = 10.0}}{{else}}{{$limitUp = .Data.Speedtest.UploadMBps}}{{end}}
             {{if gt .Data.Speedtest.DownloadMBps 50.0}}{{$limitDown = 50.0}}{{else}}{{$limitDown = .Data.Speedtest.DownloadMBps}}{{end}}
         <div class="section">
-            <h2>Reference Speed (Speedtest.net)</h2>
+        <div class="section">
+            <h2 data-i18n="header_ref_speed">Reference Speed (Speedtest.net)</h2>
             <div class="card" style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     {{if .Data.Speedtest.ISP}}
                     <div>
-                        <div class="metric-label">Internet Service Provider</div>
+                        <div class="metric-label" data-i18n="label_isp">Internet Service Provider</div>
                         <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ISP}}</div>
                     </div>
                     {{end}}
                     <div>
-                        <div class="metric-label">Benchmark Server</div>
+                        <div class="metric-label" data-i18n="label_server">Benchmark Server</div>
                         <div class="metric-value" style="font-size: 1.1em;">{{.Data.Speedtest.ServerName}}</div>
                     </div>
                 </div>
@@ -400,9 +421,122 @@ const htmlTemplate = `
         </div>
         
         <footer>
-            <small>Generated by Nextcloud Performance Tool (Open Source)</small>
+            <small data-i18n="footer">Generated by Nextcloud Performance Tool (Open Source)</small>
         </footer>
     </div>
+    <script>
+        const translations = {
+            en: {
+                report_title: "Nextcloud Performance Report",
+                meta_generated: "Generated:",
+                meta_target: "Target:",
+                meta_server: "Server:",
+                section_system_info: "System Information",
+                label_client_os: "Client OS",
+                label_cpu_model: "CPU Model",
+                label_cpu_usage: "CPU Usage:",
+                label_memory_ram: "Memory (RAM)",
+                label_total: "Total:",
+                label_used: "Used:",
+                label_free: "Free:",
+                label_local_network: "Local Network",
+                label_primary_if: "Primary Interface:",
+                section_network_diagnostics: "Network Diagnostics",
+                label_dns: "DNS Resolution",
+                label_tcp_connect: "TCP Connect",
+                label_avg: "Avg:",
+                label_min: "Min:",
+                label_max: "Max:",
+                label_packet_loss: "Loss:",
+                summary_view_ping: "View Detailed Ping Results",
+                th_seq: "Seq",
+                th_time: "Time (ms)",
+                th_status: "Status",
+                header_ref_speed: "Reference Speed (Speedtest.net)",
+                label_isp: "Internet Service Provider",
+                label_server: "Benchmark Server",
+                label_upload_speed: "Upload Speed",
+                label_download_speed: "Download Speed",
+                section_webdav_benchmark: "WebDAV Benchmark",
+                label_small_files: "Small Files (5 x 512KB)",
+                label_upload: "Upload:",
+                label_download: "Download:",
+                label_medium_files: "Medium Files (3 x 5MB)",
+                label_large_file: "Large File (256MB Chunked)",
+                footer: "Generated by Nextcloud Performance Tool (Open Source)",
+                conc_excellent: "Excellent connection",
+                conc_solid: "Solid performance",
+                conc_optimize: "Needs optimization"
+            },
+            de: {
+                report_title: "Nextcloud Performance Bericht",
+                meta_generated: "Generiert:",
+                meta_target: "Ziel:",
+                meta_server: "Server:",
+                section_system_info: "Systeminformationen",
+                label_client_os: "Client Betriebssystem",
+                label_cpu_model: "CPU Modell",
+                label_cpu_usage: "CPU Auslastung:",
+                label_memory_ram: "Arbeitsspeicher (RAM)",
+                label_total: "Gesamt:",
+                label_used: "Belegt:",
+                label_free: "Frei:",
+                label_local_network: "Lokales Netzwerk",
+                label_primary_if: "Primäre Schnittstelle:",
+                section_network_diagnostics: "Netzwerkdiagnose",
+                label_dns: "DNS-Auflösung",
+                label_tcp_connect: "TCP Verbindung",
+                label_avg: "Durschn.:",
+                label_min: "Min:",
+                label_max: "Max:",
+                label_packet_loss: "Verlust:",
+                summary_view_ping: "Detaillierte Ping-Ergebnisse anzeigen",
+                th_seq: "Seq",
+                th_time: "Zeit (ms)",
+                th_status: "Status",
+                header_ref_speed: "Referenzgeschwindigkeit (Speedtest.net)",
+                label_isp: "Internetanbieter",
+                label_server: "Benchmark-Server",
+                label_upload_speed: "Upload Geschwindigkeit",
+                label_download_speed: "Download Geschwindigkeit",
+                section_webdav_benchmark: "WebDAV Benchmark",
+                label_small_files: "Kleine Dateien (5 x 512KB)",
+                label_upload: "Upload:",
+                label_download: "Download:",
+                label_medium_files: "Mittlere Dateien (3 x 5MB)",
+                label_large_file: "Große Datei (256MB Chunked)",
+                footer: "Generiert vom Nextcloud Performance Tool (Open Source)",
+                conc_excellent: "Exzellente Verbindung",
+                conc_solid: "Solide Leistung",
+                conc_optimize: "Optimierungsbedarf"
+            }
+        };
+
+        const userLang = navigator.language || navigator.userLanguage;
+        let currentLang = localStorage.getItem('report_lang') || (userLang.startsWith('de') ? 'de' : 'en'); // Use separate/same key? separate might be safer for report context
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('report_lang', lang);
+            document.getElementById('currentLang').innerText = lang.toUpperCase();
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+        }
+
+        function toggleLanguage() {
+            const newLang = currentLang === 'en' ? 'de' : 'en';
+            updateLanguage(newLang);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             updateLanguage(currentLang);
+        });
+    </script>
 </body>
 </html>
 `

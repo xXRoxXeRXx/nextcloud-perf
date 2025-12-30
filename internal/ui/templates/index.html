@@ -159,54 +159,87 @@
         .text-red {
             color: #c0392b;
         }
+
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 130, 201, 0.1);
+            /* Nextcloud Blue tint */
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            color: #0082c9;
+            /* Nextcloud Blue */
+            font-size: 0.9em;
+            border: 1px solid rgba(0, 130, 201, 0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .lang-toggle:hover {
+            background: rgba(0, 130, 201, 0.2);
+        }
+
+        header {
+            position: relative;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-cloud"></i> Nextcloud Performance Check</h1>
-            <div class="subtitle">System & Network Analysis Tool</div>
+            <div class="lang-toggle" onclick="toggleLanguage()">
+                <i class="fas fa-globe"></i> <span id="currentLang">EN</span>
+            </div>
+            <h1><i class="fas fa-cloud"></i> <span data-i18n="title">Nextcloud Performance Check</span></h1>
+            <div class="subtitle" data-i18n="subtitle">System & Network Analysis Tool</div>
         </header>
 
         <!-- Login Card -->
         <div class="card" id="loginCard">
-            <h2><i class="fas fa-sign-in-alt"></i> Connection Details</h2>
+            <h2><i class="fas fa-sign-in-alt"></i> <span data-i18n="connection_details">Connection Details</span></h2>
             <div class="form-group">
-                <label for="url">Nextcloud URL</label>
+                <label for="url" data-i18n="label_url">Nextcloud URL</label>
                 <input type="text" id="url" placeholder="https://cloud.example.com" value="https://">
             </div>
             <div class="form-group">
-                <label for="user">Username</label>
-                <input type="text" id="user" placeholder="Your Username">
+                <label for="user" data-i18n="label_username">Username</label>
+                <input type="text" id="user" data-i18n-placeholder="placeholder_username" placeholder="Your Username">
             </div>
             <div class="form-group">
-                <label for="pass">Password / App Token</label>
-                <input type="password" id="pass" placeholder="Your Password"
-                    onkeypress="if(event.key==='Enter')startTest()">
+                <label for="pass" data-i18n="label_password">Password / App Token</label>
+                <input type="password" id="pass" data-i18n-placeholder="placeholder_password"
+                    placeholder="Your Password" onkeypress="if(event.key==='Enter')startTest()">
             </div>
             <button class="btn-primary" onclick="startTest()">
-                <i class="fas fa-tachometer-alt"></i> Start Benchmark
+                <i class="fas fa-tachometer-alt"></i> <span data-i18n="btn_start">Start Benchmark</span>
             </button>
         </div>
 
         <!-- Testing UI -->
         <div class="card" id="progressCard" style="display: none;">
-            <h2><i class="fas fa-running"></i> Test in Progress</h2>
+            <h2><i class="fas fa-running"></i> <span data-i18n="test_running">Test in Progress</span></h2>
 
             <!-- Stage Indicators -->
             <div class="progress-stages">
-                <div class="stage" id="stage-system"><i class="fas fa-desktop"></i> System</div>
-                <div class="stage" id="stage-network"><i class="fas fa-network-wired"></i> Network</div>
-                <div class="stage" id="stage-connect"><i class="fas fa-plug"></i> Connect</div>
-                <div class="stage" id="stage-benchmark"><i class="fas fa-tachometer-alt"></i> Benchmark</div>
-                <div class="stage" id="stage-report"><i class="fas fa-file-alt"></i> Report</div>
+                <div class="stage" id="stage-system"><i class="fas fa-desktop"></i> <span
+                        data-i18n="stage_system">System</span></div>
+                <div class="stage" id="stage-network"><i class="fas fa-network-wired"></i> <span
+                        data-i18n="stage_network">Network</span></div>
+                <div class="stage" id="stage-connect"><i class="fas fa-plug"></i> <span
+                        data-i18n="stage_connect">Connect</span></div>
+                <div class="stage" id="stage-benchmark"><i class="fas fa-tachometer-alt"></i> <span
+                        data-i18n="stage_benchmark">Benchmark</span></div>
+                <div class="stage" id="stage-report"><i class="fas fa-file-alt"></i> <span
+                        data-i18n="stage_report">Report</span></div>
             </div>
 
             <!-- Current Status -->
             <div class="current-status">
                 <div class="spinner"></div>
-                <span id="currentStatus">Initializing...</span>
+                <span id="currentStatus" data-i18n="status_initializing">Initializing...</span>
             </div>
 
             <!-- Progress Bar -->
@@ -223,19 +256,22 @@
             <div
                 style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
                 <i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
-                <h2 style="margin: 0;">Benchmark Completed!</h2>
+                <h2 style="margin: 0;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
             </div>
 
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> <span data-i18n="header_ref_speed">Reference
+                    Speed (Speedtest.net)</span></h3>
             <div class="card"
                 style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                        <div class="metric-label" style="font-weight: bold;">Internet Service Provider</div>
+                        <div class="metric-label" style="font-weight: bold;" data-i18n="label_isp">Internet Service
+                            Provider</div>
                         <div class="metric-value" style="font-size: 1.1em;" id="resProvider">--</div>
                     </div>
                     <div>
-                        <div class="metric-label" style="font-weight: bold;">Benchmark Server</div>
+                        <div class="metric-label" style="font-weight: bold;" data-i18n="label_server">Benchmark Server
+                        </div>
                         <div class="metric-value" style="font-size: 1.1em;" id="resStServer">--</div>
                     </div>
                 </div>
@@ -243,29 +279,31 @@
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
                 <div
                     style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
-                    <div style="font-size: 0.85em; color: #166534;">Upload (Ref)</div>
+                    <div style="font-size: 0.85em; color: #166534;" data-i18n="label_upload_ref">Upload (Ref)</div>
                     <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
                 </div>
                 <div
                     style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
-                    <div style="font-size: 0.85em; color: #cc0000;">Download (Ref)</div>
+                    <div style="font-size: 0.85em; color: #cc0000;" data-i18n="label_download_ref">Download (Ref)</div>
                     <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
                 </div>
             </div>
 
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-tachometer-alt"></i> Transfer Speed Results</h3>
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-tachometer-alt"></i> <span
+                    data-i18n="header_transfer_speed">Transfer Speed Results</span></h3>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Small Files</div>
+                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_small_files">
+                        Small Files</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">5 x 512KB</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
                         <span class="quality-indicator quality-none" id="qSmallUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
                         <span class="quality-indicator quality-none" id="qSmallDown"></span>
                     </div>
@@ -273,15 +311,16 @@
                 </div>
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Medium Files</div>
+                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_medium_files">
+                        Medium Files</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">3 x 5MB</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
                         <span class="quality-indicator quality-none" id="qMedUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
                         <span class="quality-indicator quality-none" id="qMedDown"></span>
                     </div>
@@ -289,15 +328,16 @@
                 </div>
                 <div
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;">Large File</div>
+                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_large_file">Large
+                        File</div>
                     <div style="font-size: 0.7em; opacity: 0.7;">256MB (25MB Chunks)</div>
                     <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Upload:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
                         <span class="quality-indicator quality-none" id="qLargeUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;">Download:</span>
+                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
                         <span class="quality-indicator quality-none" id="qLargeDown"></span>
                     </div>
@@ -305,24 +345,25 @@
                 </div>
             </div>
 
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-network-wired"></i> Network Summary</h3>
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-network-wired"></i> <span
+                    data-i18n="header_network_summary">Network Summary</span></h3>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
                 <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;">Avg Latency</div>
+                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_latency">Avg Latency</div>
                     <div class="metric-value">
                         <span id="resPing">--</span>
                         <span class="quality-indicator quality-none" id="qPing"></span>
                     </div>
                 </div>
                 <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;">Packet Loss</div>
+                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_packet_loss">Packet Loss</div>
                     <div class="metric-value">
                         <span id="resPacketLoss">--</span>
                         <span class="quality-indicator quality-none" id="qLoss"></span>
                     </div>
                 </div>
                 <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;">DNS Resolution</div>
+                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_dns">DNS Resolution</div>
                     <div class="metric-value">
                         <span id="resDNS">--</span>
                     </div>
@@ -332,19 +373,147 @@
             <div style="text-align: center; margin-top: 30px;">
                 <a href="/report/download" target="_blank" class="btn-primary"
                     style="display: inline-block; text-decoration: none; padding: 18px 50px; font-size: 1.1em;">
-                    <i class="fas fa-file-download"></i> Download Detailed Report
+                    <i class="fas fa-file-download"></i> <span data-i18n="btn_download_report">Download Detailed
+                        Report</span>
                 </a>
             </div>
 
             <div style="margin-top: 20px; text-align: center;">
                 <button class="btn-secondary" onclick="location.reload()" style="padding: 12px 30px;">
-                    <i class="fas fa-redo"></i> Run New Test
+                    <i class="fas fa-redo"></i> <span data-i18n="btn_run_new">Run New Test</span>
                 </button>
             </div>
         </div>
     </div>
 
     <script>
+        const translations = {
+            en: {
+                title: "Nextcloud Performance Check",
+                subtitle: "System & Network Analysis Tool",
+                connection_details: "Connection Details",
+                label_url: "Nextcloud URL",
+                label_username: "Username",
+                label_password: "Password / App Token",
+                placeholder_username: "Your Username",
+                placeholder_password: "Your Password",
+                btn_start: "Start Benchmark",
+                test_running: "Test in Progress",
+                stage_system: "System",
+                stage_network: "Network",
+                stage_connect: "Connect",
+                stage_benchmark: "Benchmark",
+                stage_report: "Report",
+                status_initializing: "Initializing...",
+                benchmark_completed: "Benchmark Completed!",
+                benchmark_failed: "Benchmark Failed",
+                header_ref_speed: "Reference Speed (Speedtest.net)",
+                label_isp: "Internet Service Provider",
+                label_server: "Benchmark Server",
+                label_upload_ref: "Upload (Ref)",
+                label_download_ref: "Download (Ref)",
+                header_transfer_speed: "Transfer Speed Results",
+                label_small_files: "Small Files",
+                label_medium_files: "Medium Files",
+                label_large_file: "Large File",
+                label_upload: "Upload:",
+                label_download: "Download:",
+                header_network_summary: "Network Summary",
+                label_latency: "Avg Latency",
+                label_packet_loss: "Packet Loss",
+                label_dns: "DNS Resolution",
+                btn_download_report: "Download Detailed Report",
+                btn_run_new: "Run New Test",
+                conc_excellent: "Excellent connection",
+                conc_solid: "Solid performance",
+                conc_optimize: "Needs optimization",
+                please_fill: "Please fill in all fields."
+            },
+            de: {
+                title: "Nextcloud Performance Check",
+                subtitle: "System- & Netzwerkanalyse-Tool",
+                connection_details: "Verbindungsdetails",
+                label_url: "Nextcloud URL",
+                label_username: "Benutzername",
+                label_password: "Passwort / App Token",
+                placeholder_username: "Dein Benutzername",
+                placeholder_password: "Dein Passwort",
+                btn_start: "Benchmark Starten",
+                test_running: "Test läuft",
+                stage_system: "System",
+                stage_network: "Netzwerk",
+                stage_connect: "Verbinden",
+                stage_benchmark: "Benchmark",
+                stage_report: "Bericht",
+                status_initializing: "Initialisiere...",
+                benchmark_completed: "Benchmark Abgeschlossen!",
+                benchmark_failed: "Benchmark Fehlgeschlagen",
+                header_ref_speed: "Referenzgeschwindigkeit (Speedtest.net)",
+                label_isp: "Internetanbieter",
+                label_server: "Benchmark-Server",
+                label_upload_ref: "Upload (Ref)",
+                label_download_ref: "Download (Ref)",
+                header_transfer_speed: "Übertragungsgeschwindigkeit",
+                label_small_files: "Kleine Dateien",
+                label_medium_files: "Mittlere Dateien",
+                label_large_file: "Große Datei",
+                label_upload: "Upload:",
+                label_download: "Download:",
+                header_network_summary: "Netzwerk-Zusammenfassung",
+                label_latency: "Durchschn. Latenz",
+                label_packet_loss: "Packet Loss",
+                label_dns: "DNS-Auflösung",
+                btn_download_report: "Detaillierten Bericht herunterladen",
+                btn_run_new: "Neuen Test starten",
+                conc_excellent: "Exzellente Verbindung",
+                conc_solid: "Solide Leistung",
+                conc_optimize: "Optimierungsbedarf",
+                please_fill: "Bitte füllen Sie alle Felder aus."
+            }
+        };
+
+        // Determine default language (Browser -> de, else en)
+        const userLang = navigator.language || navigator.userLanguage;
+        let currentLang = localStorage.getItem('lang') || (userLang.startsWith('de') ? 'de' : 'en');
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            document.getElementById('currentLang').innerText = lang.toUpperCase();
+
+            // Translate elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+
+            // Translate placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang][key]) {
+                    el.placeholder = translations[lang][key];
+                }
+            });
+
+            // Rerun conclusion text updates if results are visible
+            // Use a custom event or check existence of elements to re-render dynamic text
+            if (document.getElementById('resultsCard').style.display === 'block') {
+                // Re-trigger visual updates if needed, though dynamic content handles this via getConclusion
+            }
+        }
+
+        function toggleLanguage() {
+            const newLang = currentLang === 'en' ? 'de' : 'en';
+            updateLanguage(newLang);
+        }
+
+        // Init language on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLanguage(currentLang);
+        });
+
         const evtSource = new EventSource("/events");
         const logDiv = document.getElementById("log");
         const progressBar = document.getElementById("progressBar");
@@ -474,9 +643,9 @@
 
             function getConclusion(quality) {
                 switch (quality) {
-                    case 'green': return '<span class="text-green">Exzellente Verbindung</span>';
-                    case 'yellow': return '<span class="text-yellow">Solide Leistung</span>';
-                    case 'red': return '<span class="text-red">Optimierungsbedarf</span>';
+                    case 'green': return `<span class="text-green" data-i18n="conc_excellent">${translations[currentLang].conc_excellent}</span>`;
+                    case 'yellow': return `<span class="text-yellow" data-i18n="conc_solid">${translations[currentLang].conc_solid}</span>`;
+                    case 'red': return `<span class="text-red" data-i18n="conc_optimize">${translations[currentLang].conc_optimize}</span>`;
                     default: return '';
                 }
             }
@@ -499,7 +668,8 @@
                 // Update header to red failure state
                 const header = document.querySelector('#resultsCard > div:first-child');
                 header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-                header.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">Benchmark Failed</h2><div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">' + data.error + '</div>';
+                const failText = translations[currentLang].benchmark_failed;
+                header.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + failText + '</h2><div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">' + data.error + '</div>';
 
             } else if (data.Completed) {
                 document.getElementById('progressCard').style.display = 'none';
@@ -508,7 +678,8 @@
                 // Reset header to green success state (in case of retry)
                 const header = document.querySelector('#resultsCard > div:first-child');
                 header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
-                header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">Benchmark Completed!</h2>';
+                const successText = translations[currentLang].benchmark_completed;
+                header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + successText + '</h2>';
             }
 
 
@@ -592,7 +763,7 @@
             const pass = document.getElementById('pass').value;
 
             if (!url || !user || !pass) {
-                alert("Please fill in all fields.");
+                alert(translations[currentLang].please_fill);
                 return;
             }
 

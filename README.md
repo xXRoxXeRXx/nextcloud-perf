@@ -29,11 +29,21 @@
 | **📁 WebDAV** | Upload/Download-Benchmark (Chunked Uploads 25MB, Unique Folders) |
 | **🧠 Analyse** | **Neu**: Automatische Qualitätsbewertung ("Exzellent", "Solide", "Optimierungsbedarf") |
 | **🛡️ Stabilität** | **Neu**: Robustes "Fail-Fast" Error Handling bei Verbindungsproblemen |
+| **🌍 Sprache** | **Neu (v2.3.0)**: Vollständige Übersetzung (DE/EN) mit Auto-Detection |
 | **📊 Reporting** | HTML-Report Generator mit detaillierten Metriken & Conclusion-Texten |
 
 ---
 
-## 🆕 Was ist neu in v2.2.0?
+## 🆕 Was ist neu in v2.3.0?
+
+*   **Internationalisierung (i18n)**:
+    *   Das Tool spricht jetzt **Deutsch & Englisch**.
+    *   **Auto-Detection**: Startet automatisch in deiner Browsersprache.
+    *   **Manueller Switch**: Oben rechts kannst du jederzeit umschalten.
+    *   Auch der **HTML-Report** ist vollständig übersetzt.
+*   **Verbesserte UI**: Optimierter Kontrast für den Language-Switch und verfeinertes Layout.
+
+## 🆕 Was war neu in v2.2.0?
 
 *   **Robustes Error Handling**: Keine "hängenden" Benchmarks mehr. Bei falschen Credentials oder Verbindungsfehlern bricht das Tool sofort ab und zeigt den Fehler an.
 *   **Performance Optimierung**: WebDAV-Uploads nutzen nun **25MB Chunks** für bessere Performance bei großen Dateien.
