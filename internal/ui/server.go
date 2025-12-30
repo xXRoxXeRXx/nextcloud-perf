@@ -161,6 +161,12 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 		s.Broadcast("Starting Benchmark...")
 
+		// Ensure we always send the result at the end, even on error
+		defer func() {
+			s.SendResult(rpt)
+			s.Broadcast("Benchmark Logic Finished.")
+		}()
+
 		// 1. SYSTEM INFO
 		s.Broadcast("Collecting System Information...")
 		sys, err := system.GetSystemInfo()
@@ -280,6 +286,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		caps, err := client.GetCapabilities()
 		if err != nil {
 			s.Broadcast(fmt.Sprintf("Error: %v", err))
+			rpt.Error = fmt.Sprintf("Failed to connect to Nextcloud: %v", err)
 			return
 		}
 		rpt.ServerVer = caps.Ocs.Data.Version.String
@@ -287,7 +294,11 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 		testFolder := fmt.Sprintf("perf-test-%d", time.Now().Unix())
 		s.Broadcast("Creating test directory...")
-		client.CreateDirectory(testFolder)
+		if err := client.CreateDirectory(testFolder); err != nil {
+			s.Broadcast(fmt.Sprintf("Error creating folder: %v", err))
+			rpt.Error = fmt.Sprintf("Failed to create test folder: %v", err)
+			return
+		}
 
 		// 4. BENCHMARKS
 		// Small Files: 5 x 512KB

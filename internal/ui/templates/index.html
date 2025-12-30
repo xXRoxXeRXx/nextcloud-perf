@@ -491,10 +491,24 @@
 
                 el.innerHTML = getConclusion(finalQ);
             }
-            // Only show results if completed
-            if (data.Completed) {
+            // Only show results if completed or error
+            if (data.error) {
                 document.getElementById('progressCard').style.display = 'none';
                 document.getElementById('resultsCard').style.display = 'block';
+
+                // Update header to red failure state
+                const header = document.querySelector('#resultsCard > div:first-child');
+                header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                header.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">Benchmark Failed</h2><div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">' + data.error + '</div>';
+
+            } else if (data.Completed) {
+                document.getElementById('progressCard').style.display = 'none';
+                document.getElementById('resultsCard').style.display = 'block';
+
+                // Reset header to green success state (in case of retry)
+                const header = document.querySelector('#resultsCard > div:first-child');
+                header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
+                header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">Benchmark Completed!</h2>';
             }
 
 

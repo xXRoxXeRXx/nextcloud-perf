@@ -42,6 +42,7 @@ type ReportData struct {
 	LargeFile       SpeedResult
 	LargeFileDown   SpeedResult
 	Speedtest       *network.SpeedtestResult `json:"Speedtest,omitempty"`
+	Error           string                   `json:"error,omitempty"` // Global error message if benchmark failed
 }
 
 type SpeedResult struct {
