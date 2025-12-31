@@ -200,22 +200,25 @@
         <!-- Login Card -->
         <div class="card" id="loginCard">
             <h2><i class="fas fa-sign-in-alt"></i> <span data-i18n="connection_details">Connection Details</span></h2>
-            <div class="form-group">
-                <label for="url" data-i18n="label_url">Nextcloud URL</label>
-                <input type="text" id="url" placeholder="https://cloud.example.com" value="https://">
-            </div>
-            <div class="form-group">
-                <label for="user" data-i18n="label_username">Username</label>
-                <input type="text" id="user" data-i18n-placeholder="placeholder_username" placeholder="Your Username">
-            </div>
-            <div class="form-group">
-                <label for="pass" data-i18n="label_password">Password / App Token</label>
-                <input type="password" id="pass" data-i18n-placeholder="placeholder_password"
-                    placeholder="Your Password" onkeypress="if(event.key==='Enter')startTest()">
-            </div>
-            <button class="btn-primary" onclick="startTest()">
-                <i class="fas fa-tachometer-alt"></i> <span data-i18n="btn_start">Start Benchmark</span>
-            </button>
+            <form onsubmit="event.preventDefault(); startTest();">
+                <div class="form-group">
+                    <label for="url" data-i18n="label_url">Nextcloud URL</label>
+                    <input type="text" id="url" placeholder="https://cloud.example.com" value="https://">
+                </div>
+                <div class="form-group">
+                    <label for="user" data-i18n="label_username">Username</label>
+                    <input type="text" id="user" data-i18n-placeholder="placeholder_username"
+                        placeholder="Your Username">
+                </div>
+                <div class="form-group">
+                    <label for="pass" data-i18n="label_password">Password / App Token</label>
+                    <input type="password" id="pass" data-i18n-placeholder="placeholder_password"
+                        placeholder="Your Password">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> <span data-i18n="btn_start">Start Benchmark</span>
+                </button>
+            </form>
         </div>
 
         <!-- Testing UI -->
@@ -257,6 +260,33 @@
                 style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
                 <i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
                 <h2 style="margin: 0;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
+            </div>
+
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-desktop"></i> <span data-i18n="section_system_info">System
+                    Information</span></h3>
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="card" style="padding: 15px;">
+                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_client_os">Client OS</div>
+                    <div style="font-weight: bold;" id="sysOS">--</div>
+                    <div style="font-size: 0.8em; color: gray; margin-top: 5px;" data-i18n="label_cpu_model">CPU Model
+                    </div>
+                    <div style="font-size: 0.9em;" id="sysCPU">--</div>
+                    <div style="font-size: 0.9em;"><span data-i18n="label_cpu_usage">CPU Usage:</span> <span
+                            id="sysCPUUsage">--</span></div>
+                </div>
+                <div class="card" style="padding: 15px;">
+                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_memory_ram">Memory (RAM)</div>
+                    <div><span data-i18n="label_total">Total:</span> <span id="sysRAMTotal">--</span></div>
+                    <div><span data-i18n="label_used">Used:</span> <span id="sysRAMUsed">--</span></div>
+                    <div><span data-i18n="label_free">Free:</span> <span id="sysRAMFree">--</span></div>
+                </div>
+                <div class="card" style="padding: 15px;">
+                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_local_network">Local Network</div>
+                    <div style="font-weight: bold; font-size: 1.1em;" id="netConnType">--</div>
+                    <div style="margin-top:5px;"><span data-i18n="label_primary_if">Primary Interface:</span> <span
+                            id="netPrimaryIF">--</span></div>
+                </div>
             </div>
 
             <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> <span data-i18n="header_ref_speed">Reference
@@ -370,6 +400,56 @@
                 </div>
             </div>
 
+            <!-- Detailed Ping Statistics Card -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px;">
+                <div class="card">
+                    <div class="metric-label"><span data-i18n="label_tcp_connect">TCP Connect</span> (<span
+                            id="pingCount">--</span> packets)</div>
+                    <div class="metric-value"><span data-i18n="label_avg">Avg:</span> <span id="pingAvg">--</span></div>
+                    <div class="metric-label"><span data-i18n="label_min">Min:</span> <span id="pingMin">--</span> |
+                        <span data-i18n="label_max">Max:</span> <span id="pingMax">--</span>
+                    </div>
+                    <div class="metric-label"><span data-i18n="label_packet_loss">Packet Loss:</span> <span
+                            id="pingLoss">--</span></div>
+                </div>
+            </div>
+
+            <!-- Detailed Network Diagnostics -->
+            <div style="margin-top: 30px; margin-bottom: 25px;">
+                <details>
+                    <summary style="cursor:pointer; color: #003d8f; font-weight:bold; margin-bottom: 10px;"
+                        data-i18n="summary_view_ping">View Detailed Ping Results</summary>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="background: #f2f2f2;">
+                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_seq">Seq</th>
+                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_time">Time (ms)</th>
+                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_status">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pingTableBody">
+                        </tbody>
+                    </table>
+                </details>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h4>DNS & Traceroute</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="card">
+                        <div class="metric-label" data-i18n="label_dns">DNS Resolution</div>
+                        <div id="dnsTime" style="font-size: 1.1em; font-weight: bold; margin-bottom: 5px;">--</div>
+                        <div id="dnsIPs"
+                            style="font-size: 0.85em; max-height: 150px; overflow-y: auto; font-family: monospace;">-
+                        </div>
+                    </div>
+                    <div id="tracerouteBox" class="log-output"
+                        style="background: #2d2d2d; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 0.8em; max-height: 200px; margin-top:0;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
             <div style="text-align: center; margin-top: 30px;">
                 <a href="/report/download" target="_blank" class="btn-primary"
                     style="display: inline-block; text-decoration: none; padding: 18px 50px; font-size: 1.1em;">
@@ -427,7 +507,26 @@
                 conc_excellent: "Excellent connection",
                 conc_solid: "Solid performance",
                 conc_optimize: "Needs optimization",
-                please_fill: "Please fill in all fields."
+                please_fill: "Please fill in all fields.",
+                section_system_info: "System Information",
+                label_client_os: "Client OS",
+                label_cpu_model: "CPU Model",
+                label_cpu_usage: "CPU Usage:",
+                label_memory_ram: "Memory (RAM)",
+                label_total: "Total:",
+                label_used: "Used:",
+                label_free: "Free:",
+                label_local_network: "Local Network",
+                label_primary_if: "Primary Interface:",
+                section_network_diagnostics: "Network Diagnostics",
+                label_tcp_connect: "TCP Connect",
+                label_avg: "Avg:",
+                label_min: "Min:",
+                label_max: "Max:",
+                summary_view_ping: "View Detailed Ping Results",
+                th_seq: "Seq",
+                th_time: "Time (ms)",
+                th_status: "Status"
             },
             de: {
                 title: "Nextcloud Performance Check",
@@ -468,7 +567,26 @@
                 conc_excellent: "Exzellente Verbindung",
                 conc_solid: "Solide Leistung",
                 conc_optimize: "Optimierungsbedarf",
-                please_fill: "Bitte füllen Sie alle Felder aus."
+                please_fill: "Bitte füllen Sie alle Felder aus.",
+                section_system_info: "Systeminformationen",
+                label_client_os: "Client Betriebssystem",
+                label_cpu_model: "CPU Modell",
+                label_cpu_usage: "CPU Auslastung:",
+                label_memory_ram: "Arbeitsspeicher (RAM)",
+                label_total: "Gesamt:",
+                label_used: "Belegt:",
+                label_free: "Frei:",
+                label_local_network: "Lokales Netzwerk",
+                label_primary_if: "Primäre Schnittstelle:",
+                section_network_diagnostics: "Netzwerkdiagnose",
+                label_tcp_connect: "TCP Verbindung",
+                label_avg: "Durschn.:",
+                label_min: "Min:",
+                label_max: "Max:",
+                summary_view_ping: "Detaillierte Ping-Ergebnisse anzeigen",
+                th_seq: "Seq",
+                th_time: "Zeit (ms)",
+                th_status: "Status"
             }
         };
 
@@ -714,6 +832,47 @@
                 }
             }
 
+            // System Info
+            if (data.SystemOS) {
+                document.getElementById('sysOS').innerText = data.SystemOS;
+                document.getElementById('sysCPU').innerText = data.CPU.Model;
+                document.getElementById('sysCPUUsage').innerText = data.CPU.Usage.toFixed(1) + "%";
+                document.getElementById('sysRAMTotal').innerText = data.RAM.Total;
+                document.getElementById('sysRAMUsed').innerText = data.RAM.Used + " (" + data.RAM.Usage.toFixed(1) + "%)";
+                document.getElementById('sysRAMFree').innerText = data.RAM.Free;
+            }
+            if (data.LocalNetwork) {
+                document.getElementById('netConnType').innerText = data.LocalNetwork.ConnectionType;
+                document.getElementById('netPrimaryIF').innerText = data.LocalNetwork.PrimaryIF;
+
+                // Display all interfaces in the card
+                const netCard = document.getElementById('netConnType').parentNode;
+                // Remove any previously added interface details but keep the headers
+                // A simple way is to check if we already added them, or just strictly control the structure.
+                // Ideally, we have a container. Let's make one if it doesn't exist, or just append distinctively.
+                let ifContainer = document.getElementById('netInterfacesContainer');
+                if (!ifContainer) {
+                    ifContainer = document.createElement('div');
+                    ifContainer.id = 'netInterfacesContainer';
+                    ifContainer.style.marginTop = '10px';
+                    ifContainer.style.fontSize = '0.85em';
+                    netCard.appendChild(ifContainer);
+                }
+                ifContainer.innerHTML = ''; // Clear previous
+
+                if (data.LocalNetwork.Interfaces) {
+                    data.LocalNetwork.Interfaces.forEach(iface => {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '5px';
+                        div.innerHTML = `<strong>${iface.Name}</strong> (${iface.Type}): ${iface.IPAddress}`;
+                        if (iface.LinkSpeed) {
+                            div.innerHTML += `<br>Speed: ${iface.LinkSpeed}`;
+                        }
+                        ifContainer.appendChild(div);
+                    });
+                }
+            }
+
             // Reference Speed
             if (data.Speedtest) {
                 if (data.Speedtest.error) {
@@ -754,6 +913,74 @@
                         document.getElementById('resStServer').innerText = data.Speedtest.server_name;
                     }
                 }
+            }
+
+            // Expanded Network Diagnostics
+            if (data.PingStats) {
+                // Use snake_case keys as defined in detailed.go JSON tags
+                document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
+                document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
+
+                // Detailed Ping
+                document.getElementById('pingCount').innerText = data.PingStats.count;
+                document.getElementById('pingAvg').innerText = data.PingStats.avg_ms.toFixed(2) + " ms";
+                document.getElementById('pingMin').innerText = data.PingStats.min_ms.toFixed(2);
+                document.getElementById('pingMax').innerText = data.PingStats.max_ms.toFixed(2);
+                document.getElementById('pingLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
+
+                let pingQ = 'green';
+                if (data.PingStats.avg_ms > 60) pingQ = 'red';
+                else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
+                document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
+
+                let lossQ = 'green';
+                if (data.PingStats.packet_loss > 1) lossQ = 'red';
+                else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
+                document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
+
+                // Render Ping Table
+                const tbody = document.getElementById('pingTableBody');
+                tbody.innerHTML = '';
+                if (data.PingStats.results) {
+                    data.PingStats.results.forEach(r => {
+                        const row = document.createElement('tr');
+                        // r is PingResult, strict Go struct has no JSON tags so PascalCase? 
+                        // Wait, DetailedPingStats has Results []PingResult `json:"results"`.
+                        // PingResult struct in detailed.go has NO json tags on fields: Seq, TimeMs, Success.
+                        // So they should be PascalCase.
+                        row.innerHTML = `<td>${r.Seq}</td>
+                                         <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
+                                         <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
+                        tbody.appendChild(row);
+                    });
+                }
+            }
+            if (data.DNS) {
+                // DNS uses snake_case tags
+                if (data.DNS.resolution_time > 0) {
+                    document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(2) + " ms";
+                    const dnsTimeEl = document.getElementById('dnsTime');
+                    if (dnsTimeEl) dnsTimeEl.innerText = data.DNS.resolution_time.toFixed(2) + " ms";
+
+                    const ipsDiv = document.getElementById('dnsIPs');
+                    ipsDiv.innerHTML = '';
+                    if (data.DNS.resolved_ips) {
+                        data.DNS.resolved_ips.forEach(ip => {
+                            const d = document.createElement('div');
+                            d.innerText = "- " + ip;
+                            ipsDiv.appendChild(d);
+                        });
+                    }
+                }
+            }
+            if (data.Traceroute) {
+                const trBox = document.getElementById('tracerouteBox');
+                trBox.innerHTML = '';
+                data.Traceroute.forEach(line => {
+                    const d = document.createElement('div');
+                    d.innerText = line;
+                    trBox.appendChild(d);
+                });
             }
         });
 

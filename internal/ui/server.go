@@ -276,6 +276,7 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 				hh := fmt.Sprintf("%d: %s (%v)", h.TTL, h.Address, h.RTT)
 				rpt.Traceroute = append(rpt.Traceroute, hh)
 			}
+			s.SendResult(rpt)
 		}
 
 		// 3. WEBDAV
