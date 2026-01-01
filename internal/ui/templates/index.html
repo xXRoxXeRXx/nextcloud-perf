@@ -661,7 +661,9 @@
             const msg = event.data;
 
             // Add to log
-            logDiv.innerHTML += "<div>" + msg + "</div>";
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = msg;
+            logDiv.appendChild(msgDiv);
             logDiv.scrollTop = logDiv.scrollHeight;
 
             // Update current status display
@@ -733,7 +735,10 @@
             try {
                 data = JSON.parse(event.data);
             } catch (e) {
-                logDiv.innerHTML += "<div style='color:red'>JSON Parse Error: " + e + "</div>";
+                const errDiv = document.createElement('div');
+                errDiv.style.color = 'red';
+                errDiv.textContent = "JSON Parse Error: " + e;
+                logDiv.appendChild(errDiv);
                 console.error("JSON Parse Error", e, event.data);
                 return;
             }
