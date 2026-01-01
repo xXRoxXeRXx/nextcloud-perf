@@ -1,4 +1,3 @@
-// Version: v0.1.0
 module nextcloud-perf
 
 go 1.24.0
