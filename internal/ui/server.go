@@ -64,19 +64,6 @@ func (s *Server) SaveReport(html []byte) {
 	s.LatestReport = html
 }
 
-func formatBytes(b uint64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
-}
-
 func (s *Server) HandleIndex(w http.ResponseWriter, r *http.Request) {
 	if err := templates.ExecuteTemplate(w, "index.html", nil); err != nil {
 		http.Error(w, err.Error(), 500)
@@ -127,7 +114,9 @@ func (s *Server) HandleDownloadReport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.Header().Set("Content-Disposition", "attachment; filename=Nextcloud_Perf_Report.html")
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(s.LatestReport)))
-	bytes.NewReader(s.LatestReport).WriteTo(w)
+	if _, err := bytes.NewReader(s.LatestReport).WriteTo(w); err != nil {
+		log.Printf("Failed to write report download: %v", err)
+	}
 }
 
 type RunRequest struct {

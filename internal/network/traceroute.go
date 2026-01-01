@@ -69,10 +69,12 @@ func RunTraceroute(target string, maxHops int) ([]Hop, error) {
 		}
 
 		// 4. Wait for Reply
-		c.SetReadDeadline(time.Now().Add(1 * time.Second))
+		if err := c.SetReadDeadline(time.Now().Add(1 * time.Second)); err != nil {
+			continue
+		}
 		rb := make([]byte, 1500)
 		n, peer, err := c.ReadFrom(rb)
-		
+
 		rtt := time.Since(start)
 
 		if err != nil {
@@ -103,7 +105,7 @@ func RunTraceroute(target string, maxHops int) ([]Hop, error) {
 			}
 		}
 		// TimeExceeded is expected for intermediate hops
-		
+
 		if hopIp == destAddr.String() {
 			break
 		}

@@ -55,7 +55,9 @@ var GlobalRandomBuffer []byte
 
 func init() {
 	GlobalRandomBuffer = make([]byte, 1024*1024)
-	rand.Read(GlobalRandomBuffer)
+	if _, err := rand.Read(GlobalRandomBuffer); err != nil {
+		panic(fmt.Sprintf("failed to initialize random buffer: %v", err))
+	}
 }
 
 type Result struct {

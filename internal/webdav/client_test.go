@@ -29,7 +29,9 @@ func TestGetCapabilities(t *testing.T) {
 		resp.Ocs.Data.Capabilities.Files.BigFileChunking = true
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
 	defer ts.Close()
 
@@ -62,7 +64,9 @@ func TestDownload(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(expectedContent))
+		if _, err := w.Write([]byte(expectedContent)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 	defer ts.Close()
 

@@ -136,7 +136,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// B. Detailed Ping
 	reporter.Broadcast("Running TCP Ping (10 packets)...")
-	tcpTarget := hostOnly
+	var tcpTarget string
 	if parsedURL.Port() != "" {
 		tcpTarget = net.JoinHostPort(hostOnly, parsedURL.Port())
 	} else {
@@ -271,7 +271,9 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// CLEANUP FIRST (before report)
 	reporter.Broadcast("Cleaning up test files...")
-	client.Delete(testFolder)
+	if err := client.Delete(testFolder); err != nil {
+		reporter.Broadcast(fmt.Sprintf("Warning: Cleanup failed: %v", err))
+	}
 	reporter.Broadcast("Cleanup complete.")
 
 	// GENERATE REPORT
