@@ -95,7 +95,11 @@ func RunDiskBenchmark() (DiskResult, error) {
 		f.Close()
 		return DiskResult{}, err
 	}
-	f.Sync()
+	err = f.Sync()
+	if err != nil {
+		f.Close()
+		return DiskResult{}, err
+	}
 	f.Close()
 	writeDur := time.Since(start).Seconds()
 

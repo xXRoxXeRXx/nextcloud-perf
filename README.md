@@ -1,4 +1,4 @@
-<p align="center">
+<p align center">
   <img src="assets/logo.png" alt="Nextcloud Perf Logo" width="400">
 </p>
 
@@ -21,34 +21,15 @@
 
 `nextcloud-perf` hilft dir dabei, Engpässe in deiner Nextcloud-Umgebung zu identifizieren. Ob Netzwerklatenz, langsame WebDAV-Operationen oder Ressourcenmangel auf dem Server – dieses Tool liefert dir die nötigen Daten direkt in einer übersichtlichen Weboberfläche.
 
-## ✨ Kernfunktionen (v2.2.0)
+## ✨ Kernfunktionen
 
 | Kategorie | Features |
 | :--- | :--- |
-| **🌐 Netzwerk** | **Neu**: Referenz-Speedtest (Speedtest.net) & Ampelsystem für Latenz/Packet Loss |
-| **📁 WebDAV** | Upload/Download-Benchmark (Chunked Uploads 25MB, Unique Folders) |
-| **🧠 Analyse** | **Neu**: Automatische Qualitätsbewertung ("Exzellent", "Solide", "Optimierungsbedarf") |
-| **🛡️ Stabilität** | **Neu**: Robustes "Fail-Fast" Error Handling bei Verbindungsproblemen |
-| **🌍 Sprache** | **Neu (v2.3.0)**: Vollständige Übersetzung (DE/EN) mit Auto-Detection |
-| **📊 Reporting** | HTML-Report Generator mit detaillierten Metriken & Conclusion-Texten |
-
----
-
-## 🆕 Was ist neu in v2.3.0?
-
-*   **Internationalisierung (i18n)**:
-    *   Das Tool spricht jetzt **Deutsch & Englisch**.
-    *   **Auto-Detection**: Startet automatisch in deiner Browsersprache.
-    *   **Manueller Switch**: Oben rechts kannst du jederzeit umschalten.
-    *   Auch der **HTML-Report** ist vollständig übersetzt.
-*   **Verbesserte UI**: Optimierter Kontrast für den Language-Switch und verfeinertes Layout.
-
-## 🆕 Was war neu in v2.2.0?
-
-*   **Robustes Error Handling**: Keine "hängenden" Benchmarks mehr. Bei falschen Credentials oder Verbindungsfehlern bricht das Tool sofort ab und zeigt den Fehler an.
-*   **Performance Optimierung**: WebDAV-Uploads nutzen nun **25MB Chunks** für bessere Performance bei großen Dateien.
-*   **Qualitäts-Ampel**: Ping und Packet Loss werden automatisch bewertet (Grün/Gelb/Rot) und mit einem textuellen Fazit versehen.
-*   **Verbesserte UI**: Übersichtlicheres Dashboard mit logischerer Anordnung (Reference Speed oben) und deutlicherer Fehlerdarstellung.
+| **🌐 Netzwerk** | SSL/TLS Handshake, VPN/Proxy Detection, MTU Estimation & Latency/Packet Loss Analysis |
+| **📁 WebDAV** | Upload/Download-Benchmark mit Chunking & Unterstützung für große Dateien |
+| **💻 System** | Client-side Disk I/O Benchmarks & CPU Monitoring während der Transfers |
+| **🧠 Analyse** | Automatische Qualitätsbewertung ("Exzellent", "Solide", "Optimierungsbedarf") |
+| **📊 Reporting** | Interaktives Dashboard & detaillierte HTML-Reports (DE/EN) |
 
 ---
 
@@ -58,7 +39,7 @@
 Lade die aktuellste Version für dein Betriebssystem von der [Releases-Seite](https://github.com/xxroxxerxx/nextcloud-perf/releases) herunter:
 
 *   **Windows**: `.exe` (Einfach doppelklicken)
-*   **macOS**: `.pkg` Installer (Signierter Installer für einfache Installation)
+*   **macOS**: `.pkg` Installer
 *   **Linux**: `.AppImage` (Ausführbar machen und starten)
 
 ### 🧑‍💻 Manuell Bauen
@@ -85,8 +66,8 @@ Lade die aktuellste Version für dein Betriebssystem von der [Releases-Seite](ht
 
 1. Starte das Tool (`./nextcloud-perf` oder Doppelklick).
 2. Öffne den Browser unter `http://localhost:3000`.
-3. Gib deine Nextcloud-URL, Benutzername und Passwort ein. (Keine Sorge, Credentials bleiben lokal).
-4. Klicke auf "Start Benchmark" und warte auf die Ergebnisse.
+3. Gib Nextcloud-URL, Benutzername und Passwort ein. (Credentials bleiben lokal).
+4. Klicke auf "Start Benchmark" und analysiere die Ergebnisse.
 
 ---
 
