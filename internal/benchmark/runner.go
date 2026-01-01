@@ -1,6 +1,7 @@
 package benchmark
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io"
@@ -69,7 +70,7 @@ type Result struct {
 	Errors    []error
 }
 
-func RunSmallFiles(client *webdav.Client, basePath string, filePrefix string, count int, size int64, parallel int) (*Result, error) {
+func RunSmallFiles(ctx context.Context, client *webdav.Client, basePath string, filePrefix string, count int, size int64, parallel int) (*Result, error) {
 	// Parameter validation
 	if count <= 0 || size <= 0 || parallel <= 0 {
 		return &Result{
@@ -99,7 +100,7 @@ func RunSmallFiles(client *webdav.Client, basePath string, filePrefix string, co
 			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
 			reader := &ZeroReader{Limit: size}
 
-			_, err := client.UploadSimple(filename, reader, size)
+			_, err := client.UploadSimple(ctx, filename, reader, size)
 			if err == nil {
 				client.LogFunc(fmt.Sprintf("DEBUG: Uploaded %d bytes to %s", size, filename))
 			}
@@ -131,7 +132,7 @@ func RunSmallFiles(client *webdav.Client, basePath string, filePrefix string, co
 	}, nil
 }
 
-func RunLargeFile(client *webdav.Client, basePath string, size int64, useChunking bool) (*Result, error) {
+func RunLargeFile(ctx context.Context, client *webdav.Client, basePath string, size int64, useChunking bool) (*Result, error) {
 	filename := fmt.Sprintf("%s/test_large.bin", basePath)
 	reader := &ZeroReader{Limit: size}
 
@@ -139,9 +140,9 @@ func RunLargeFile(client *webdav.Client, basePath string, size int64, useChunkin
 	var err error
 
 	if useChunking {
-		_, err = client.UploadChunked(filename, reader, size)
+		_, err = client.UploadChunked(ctx, filename, reader, size)
 	} else {
-		_, err = client.UploadSimple(filename, reader, size)
+		_, err = client.UploadSimple(ctx, filename, reader, size)
 	}
 
 	duration := time.Since(start)
@@ -184,7 +185,7 @@ func (z *ZeroReader) ReadFrom(r io.Reader) (n int64, err error) {
 	}
 }
 
-func RunDownloadSmallFiles(client *webdav.Client, basePath string, filePrefix string, count int, parallel int) (*Result, error) {
+func RunDownloadSmallFiles(ctx context.Context, client *webdav.Client, basePath string, filePrefix string, count int, parallel int) (*Result, error) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, parallel)
 
@@ -201,7 +202,7 @@ func RunDownloadSmallFiles(client *webdav.Client, basePath string, filePrefix st
 			defer func() { <-sem }()
 
 			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
-			rc, err := client.Download(filename)
+			rc, err := client.Download(ctx, filename)
 			if err != nil {
 				mu.Lock()
 				errs = append(errs, err)
@@ -241,11 +242,11 @@ func RunDownloadSmallFiles(client *webdav.Client, basePath string, filePrefix st
 	}, nil
 }
 
-func RunDownloadLargeFile(client *webdav.Client, basePath string) (*Result, error) {
+func RunDownloadLargeFile(ctx context.Context, client *webdav.Client, basePath string) (*Result, error) {
 	filename := fmt.Sprintf("%s/test_large.bin", basePath)
 
 	start := time.Now()
-	rc, err := client.Download(filename)
+	rc, err := client.Download(ctx, filename)
 
 	var totalBytes int64
 	var errs []error

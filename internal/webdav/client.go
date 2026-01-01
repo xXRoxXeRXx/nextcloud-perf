@@ -2,6 +2,7 @@ package webdav
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -60,13 +61,47 @@ func NewClient(url, user, pass string, logFunc func(string)) *Client {
 	}
 }
 
-func (c *Client) GetCapabilities() (*CapabilitiesResponse, error) {
+type StatusResponse struct {
+	Installed      bool   `json:"installed"`
+	Maintenance    bool   `json:"maintenance"`
+	NeedsDbUpgrade bool   `json:"needsDbUpgrade"`
+	Version        string `json:"version"`
+	VersionString  string `json:"versionstring"`
+	Edition        string `json:"edition"`
+	ProductName    string `json:"productname"`
+}
+
+func (c *Client) GetStatus(ctx context.Context) (*StatusResponse, error) {
+	endpoint := fmt.Sprintf("%s/status.php", c.BaseURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("status.php returned: %s", resp.Status)
+	}
+
+	var status StatusResponse
+	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+		return nil, fmt.Errorf("failed to parse status.php: %v", err)
+	}
+	return &status, nil
+}
+
+func (c *Client) GetCapabilities(ctx context.Context) (*CapabilitiesResponse, error) {
 	// Ensure URL ends with / (or handle it properly).
 	// The OCS endpoint is usually at /ocs/v1.php/cloud/capabilities
 	// Assuming c.BaseURL is the root ID, e.g. https://cloud.example.com
 
 	endpoint := fmt.Sprintf("%s/ocs/v1.php/cloud/capabilities?format=json", c.BaseURL)
-	req, err := http.NewRequest("GET", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -98,14 +133,14 @@ func (c *Client) GetCapabilities() (*CapabilitiesResponse, error) {
 }
 
 // UploadSimple performs a standard PUT upload
-func (c *Client) UploadSimple(remotePath string, data io.Reader, size int64) (time.Duration, error) {
+func (c *Client) UploadSimple(ctx context.Context, remotePath string, data io.Reader, size int64) (time.Duration, error) {
 	// Construct full URL: BaseURL + /remote.php/dav/files/USER/ + remotePath
 	// NOTE: This assumes BaseURL is the root. Ideally we detect the webroot.
 	targetURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, remotePath)
 
 	start := time.Now()
 	c.LogFunc(fmt.Sprintf("PUT simple: %s (%d bytes)", targetURL, size))
-	req, err := http.NewRequest("PUT", targetURL, data)
+	req, err := http.NewRequestWithContext(ctx, "PUT", targetURL, data)
 	if size > 0 {
 		req.ContentLength = size
 	}
@@ -129,11 +164,11 @@ func (c *Client) UploadSimple(remotePath string, data io.Reader, size int64) (ti
 }
 
 // Download retrieves a file and returns a ReadCloser
-func (c *Client) Download(remotePath string) (io.ReadCloser, error) {
+func (c *Client) Download(ctx context.Context, remotePath string) (io.ReadCloser, error) {
 	targetURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, strings.TrimPrefix(remotePath, "/"))
 	c.LogFunc(fmt.Sprintf("GET: %s", targetURL))
 
-	req, err := http.NewRequest("GET", targetURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", targetURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +188,7 @@ func (c *Client) Download(remotePath string) (io.ReadCloser, error) {
 }
 
 // UploadChunked performs a Chunking V2 Upload
-func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int64) (time.Duration, error) {
+func (c *Client) UploadChunked(ctx context.Context, remotePath string, data io.Reader, totalSize int64) (time.Duration, error) {
 	transferID := fmt.Sprintf("%d-%d", time.Now().Unix(), rand.Intn(100000))
 	uploadFolder := fmt.Sprintf("%s/remote.php/dav/uploads/%s/%s", c.BaseURL, c.Username, transferID)
 
@@ -161,7 +196,7 @@ func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int6
 
 	// 1. MKCOL
 	c.LogFunc(fmt.Sprintf("MKCOL: %s", uploadFolder))
-	req, err := http.NewRequest("MKCOL", uploadFolder, nil)
+	req, err := http.NewRequestWithContext(ctx, "MKCOL", uploadFolder, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -206,7 +241,7 @@ func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int6
 
 		// If n < chunkSize, this is the last chunk.
 
-		chunkReq, err := http.NewRequest("PUT", chunkURL, bytes.NewReader(buf[:n]))
+		chunkReq, err := http.NewRequestWithContext(ctx, "PUT", chunkURL, bytes.NewReader(buf[:n]))
 		if err != nil {
 			return 0, err
 		}
@@ -235,7 +270,7 @@ func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int6
 
 	c.LogFunc(fmt.Sprintf("MOVE %s -> %s", moveSource, destHeaderVal))
 
-	moveReq, err := http.NewRequest("MOVE", moveSource, nil)
+	moveReq, err := http.NewRequestWithContext(ctx, "MOVE", moveSource, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -268,11 +303,11 @@ func (c *Client) UploadChunked(remotePath string, data io.Reader, totalSize int6
 }
 
 // CreateDirectory creates a folder (MKCOL)
-func (c *Client) CreateDirectory(path string) error {
+func (c *Client) CreateDirectory(ctx context.Context, path string) error {
 	fullURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, path)
 	c.LogFunc(fmt.Sprintf("Creating Directory: %s", path))
 
-	req, err := http.NewRequest("MKCOL", fullURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "MKCOL", fullURL, nil)
 	if err != nil {
 		return err
 	}
@@ -292,11 +327,11 @@ func (c *Client) CreateDirectory(path string) error {
 }
 
 // Delete removes a file or directory
-func (c *Client) Delete(path string) error {
+func (c *Client) Delete(ctx context.Context, path string) error {
 	fullURL := fmt.Sprintf("%s/remote.php/dav/files/%s/%s", c.BaseURL, c.Username, path)
 	c.LogFunc(fmt.Sprintf("Deleting: %s", path))
 
-	req, err := http.NewRequest("DELETE", fullURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", fullURL, nil)
 	if err != nil {
 		return err
 	}

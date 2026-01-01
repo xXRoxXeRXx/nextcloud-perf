@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -36,6 +37,8 @@ type Server struct {
 	LatestReport []byte
 	ReportMu     sync.RWMutex
 	ReadyChan    chan struct{} // Signals when server is ready to accept connections
+	cancelFunc   context.CancelFunc
+	runMu        sync.Mutex
 }
 
 func NewServer(port int) *Server {
@@ -132,14 +135,41 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.runMu.Lock()
+	if s.cancelFunc != nil {
+		s.runMu.Unlock()
+		http.Error(w, "Benchmark already running", 409)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	s.cancelFunc = cancel
+	s.runMu.Unlock()
+
 	go func() {
+		defer func() {
+			s.runMu.Lock()
+			s.cancelFunc = nil
+			s.runMu.Unlock()
+		}()
+
 		opts := workflow.BenchmarkOptions{
 			URL:  req.URL,
 			User: req.User,
 			Pass: req.Pass,
 		}
-		workflow.Run(opts, s)
+		workflow.Run(ctx, opts, s)
 	}()
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) HandleCancel(w http.ResponseWriter, r *http.Request) {
+	s.runMu.Lock()
+	if s.cancelFunc != nil {
+		s.cancelFunc()
+		s.Broadcast("Benchmark cancelled by user.")
+	}
+	s.runMu.Unlock()
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -148,6 +178,7 @@ func (s *Server) Listen() {
 	http.HandleFunc("/", s.HandleIndex)
 	http.HandleFunc("/events", s.HandleEvents)
 	http.HandleFunc("/run", s.HandleRun)
+	http.HandleFunc("/run/cancel", s.HandleCancel)
 	http.HandleFunc("/report/download", s.HandleDownloadReport)
 
 	addr := fmt.Sprintf(":%d", s.Port)

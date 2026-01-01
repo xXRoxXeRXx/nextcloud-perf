@@ -21,6 +21,25 @@ type RAMInfo struct {
 	Usage float64
 }
 
+type DiskResult struct {
+	WriteMBps float64 `json:"write_mbps"`
+	ReadMBps  float64 `json:"read_mbps"`
+}
+
+type AdvancedNetworkInfo struct {
+	TLSHandshakeMs float64 `json:"tls_handshake_ms"`
+	MTU            int     `json:"mtu"`
+	ProxyDetected  bool    `json:"proxy_detected"`
+	VPNDetected    bool    `json:"vpn_detected"`
+	VPNType        string  `json:"vpn_type,omitempty"`
+}
+
+type CloudStatus struct {
+	Status      string `json:"status"`
+	Version     string `json:"version"`
+	Maintenance bool   `json:"maintenance"`
+}
+
 type ReportData struct {
 	GeneratedAt time.Time
 	TargetURL   string
@@ -34,6 +53,11 @@ type ReportData struct {
 	PingStats    network.DetailedPingStats
 	DNS          network.DNSResult
 	Traceroute   []string
+
+	AdvancedNet  AdvancedNetworkInfo `json:"advanced_net"`
+	DiskIO       DiskResult          `json:"disk_io"`
+	CloudCheck   CloudStatus         `json:"cloud_check"`
+	PeakCPUUsage float64             `json:"peak_cpu_usage"`
 
 	SmallFiles      SpeedResult
 	SmallFilesDown  SpeedResult
@@ -166,6 +190,11 @@ h2 { color: var(--global--color-dark-midnight); border-left: 5px solid var(--glo
 .metric-value { font-size: 1.3em; font-weight: bold; color: var(--global--color-ionos-blue); }
 .metric-label { font-size: 0.9em; color: var(--text-secondary); }
 .code-box { font-family: monospace; background: #2d2d2d; color: #00ff00; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9em; }
+.health-box { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+.health-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+.tag-blue { background: #e8f4fd; color: #003d8f; }
+.tag-green { background: #e8fdf4; color: #27ae60; }
+.tag-red { background: #fff0f0; color: #c0392b; }
 .error-box { background: #fff0f0; border-left: 4px solid #ff4757; padding: 15px; margin-top: 10px; color: #d63031; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
 th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
@@ -214,7 +243,11 @@ const htmlTemplate = `
             </div>
             <h1 data-i18n="report_title">Nextcloud Performance Report</h1>
             <div class="meta"><span data-i18n="meta_generated">Generated:</span> {{.Data.GeneratedAt.Format "2006-01-02 15:04:05"}}</div>
-            <div class="meta"><span data-i18n="meta_target">Target:</span> {{.Data.TargetURL}} | <span data-i18n="meta_server">Server:</span> {{.Data.ServerVer}}</div>
+            <div class="meta">
+                <span data-i18n="meta_target">Target:</span> {{.Data.TargetURL}} | 
+                <span data-i18n="meta_server">Server:</span> {{if .Data.CloudCheck.Status}}{{.Data.CloudCheck.Status}}{{else}}Nextcloud{{end}} {{.Data.CloudCheck.Version}}
+                {{if .Data.CloudCheck.Maintenance}}<span class="health-tag tag-red">MAINTENANCE</span>{{end}}
+            </div>
         </header>
 
         <div class="section">
@@ -225,7 +258,7 @@ const htmlTemplate = `
                     <div>{{.Data.SystemOS}}</div>
                     <div class="metric-label" data-i18n="label_cpu_model">CPU Model</div>
                     <div style="font-size: 0.8em">{{.Data.CPU.Model}}</div>
-                    <div class="metric-label"><span data-i18n="label_cpu_usage">CPU Usage:</span> {{printf "%.1f%%" .Data.CPU.Usage}}</div>
+                    <div class="metric-label"><span data-i18n="label_cpu_usage">CPU Usage:</span> {{printf "%.1f%%" .Data.CPU.Usage}} (Peak: {{printf "%.1f%%" .Data.PeakCPUUsage}})</div>
                 </div>
                 <div class="card">
                     <div class="metric-label" data-i18n="label_memory_ram">Memory (RAM)</div>
@@ -240,9 +273,15 @@ const htmlTemplate = `
                     {{range .Data.LocalNetwork.Interfaces}}
                     <div style="font-size: 0.85em; margin-top: 5px;">
                         <strong>{{.Name}}</strong> ({{.Type}}): {{.IPAddress}}
-                        {{if .LinkSpeed}}<br>Speed: {{.LinkSpeed}}{{end}}
                     </div>
                     {{end}}
+                </div>
+                <div class="card">
+                    <div class="metric-label" data-i18n="label_disk_io">Client Disk I/O</div>
+                    <div class="metric-value">{{printf "%.1f MB/s" .Data.DiskIO.WriteMBps}}</div>
+                    <div class="metric-label">Sequential Write</div>
+                    <div class="metric-value" style="margin-top:5px;">{{printf "%.1f MB/s" .Data.DiskIO.ReadMBps}}</div>
+                    <div class="metric-label">Sequential Read</div>
                 </div>
             </div>
         </div>
@@ -264,6 +303,15 @@ const htmlTemplate = `
                     <div class="metric-value"><span data-i18n="label_avg">Avg:</span> {{printf "%.2f ms" .Data.PingStats.AvgMs}} {{getPingQualityDot .Data.PingStats}}</div>
                     <div class="metric-label"><span data-i18n="label_min">Min:</span> {{printf "%.2f" .Data.PingStats.MinMs}} | <span data-i18n="label_max">Max:</span> {{printf "%.2f" .Data.PingStats.MaxMs}}</div>
                     <div class="metric-label"><span data-i18n="label_packet_loss">Loss:</span> {{printf "%.1f%%" .Data.PingStats.PacketLoss}} {{getLossQualityDot .Data.PingStats}}</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Advanced Stats</div>
+                    <div class="metric-label">SSL Handshake: <span class="metric-value" style="font-size: 1em;">{{printf "%.1f ms" .Data.AdvancedNet.TLSHandshakeMs}}</span></div>
+                    <div class="metric-label">Path MTU: <span class="metric-value" style="font-size: 1em;">{{if .Data.AdvancedNet.MTU}}{{.Data.AdvancedNet.MTU}} B{{else}}Unknown{{end}}</span></div>
+                    <div class="health-box">
+                        {{if .Data.AdvancedNet.VPNDetected}}<span class="health-tag tag-blue">VPN: {{.Data.AdvancedNet.VPNType}}</span>{{end}}
+                        {{if .Data.AdvancedNet.ProxyDetected}}<span class="health-tag tag-blue">PROXY</span>{{end}}
+                    </div>
                 </div>
             </div>
 
@@ -436,6 +484,7 @@ const htmlTemplate = `
                 label_cpu_model: "CPU Model",
                 label_cpu_usage: "CPU Usage:",
                 label_memory_ram: "Memory (RAM)",
+                label_disk_io: "Client Disk I/O",
                 label_total: "Total:",
                 label_used: "Used:",
                 label_free: "Free:",
@@ -478,6 +527,7 @@ const htmlTemplate = `
                 label_cpu_model: "CPU Modell",
                 label_cpu_usage: "CPU Auslastung:",
                 label_memory_ram: "Arbeitsspeicher (RAM)",
+                label_disk_io: "Client Festplatten-I/O",
                 label_total: "Gesamt:",
                 label_used: "Belegt:",
                 label_free: "Frei:",

@@ -250,6 +250,13 @@
                 <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
             </div>
 
+            <div style="text-align: right; margin-bottom: 10px;">
+                <button id="cancelBtn" class="btn-secondary" onclick="cancelTest()"
+                    style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 8px 15px; font-size: 0.9em;">
+                    <i class="fas fa-times-circle"></i> <span data-i18n="btn_cancel">Cancel Test</span>
+                </button>
+            </div>
+
             <!-- Log Output -->
             <div class="log-output" id="log"></div>
         </div>
@@ -273,7 +280,12 @@
                     </div>
                     <div style="font-size: 0.9em;" id="sysCPU">--</div>
                     <div style="font-size: 0.9em;"><span data-i18n="label_cpu_usage">CPU Usage:</span> <span
-                            id="sysCPUUsage">--</span></div>
+                            id="sysCPUUsage">--</span> (Peak: <span id="sysCPUPeak">--</span>)</div>
+                </div>
+                <div class="card" style="padding: 15px;">
+                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_disk_io">Client Disk I/O</div>
+                    <div><span data-i18n="label_write">Write:</span> <span id="diskWrite">--</span></div>
+                    <div><span data-i18n="label_read">Read:</span> <span id="diskRead">--</span></div>
                 </div>
                 <div class="card" style="padding: 15px;">
                     <div style="font-size: 0.8em; color: gray;" data-i18n="label_memory_ram">Memory (RAM)</div>
@@ -286,6 +298,12 @@
                     <div style="font-weight: bold; font-size: 1.1em;" id="netConnType">--</div>
                     <div style="margin-top:5px;"><span data-i18n="label_primary_if">Primary Interface:</span> <span
                             id="netPrimaryIF">--</span></div>
+                    <div id="advNetStats"
+                        style="margin-top:10px; font-size: 0.85em; background: #f8f9fa; padding: 10px; border-radius: 5px; display: none;">
+                        <div>SSL Handshake: <span id="valSSL">--</span></div>
+                        <div>MTU: <span id="valMTU">--</span></div>
+                        <div id="valVPN" style="color: #0082c9; font-weight: bold;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -526,7 +544,10 @@
                 summary_view_ping: "View Detailed Ping Results",
                 th_seq: "Seq",
                 th_time: "Time (ms)",
-                th_status: "Status"
+                th_status: "Status",
+                btn_cancel: "Cancel Test",
+                label_write: "Write:",
+                label_read: "Read:"
             },
             de: {
                 title: "Nextcloud Performance Check",
@@ -586,7 +607,10 @@
                 summary_view_ping: "Detaillierte Ping-Ergebnisse anzeigen",
                 th_seq: "Seq",
                 th_time: "Zeit (ms)",
-                th_status: "Status"
+                th_status: "Status",
+                btn_cancel: "Test abbrechen",
+                label_write: "Schreiben:",
+                label_read: "Lesen:"
             }
         };
 
@@ -735,10 +759,6 @@
             try {
                 data = JSON.parse(event.data);
             } catch (e) {
-                const errDiv = document.createElement('div');
-                errDiv.style.color = 'red';
-                errDiv.textContent = "JSON Parse Error: " + e;
-                logDiv.appendChild(errDiv);
                 console.error("JSON Parse Error", e, event.data);
                 return;
             }
@@ -783,7 +803,7 @@
 
                 el.innerHTML = getConclusion(finalQ);
             }
-            // Only show results if completed or error
+
             if (data.error) {
                 document.getElementById('progressCard').style.display = 'none';
                 document.getElementById('resultsCard').style.display = 'block';
@@ -791,10 +811,19 @@
                 // Update header to red failure state
                 const header = document.querySelector('#resultsCard > div:first-child');
                 header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-                const failText = translations[currentLang].benchmark_failed;
-                header.innerHTML = '<i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + failText + '</h2><div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">' + data.error + '</div>';
+                const failText = translations[currentLang].benchmark_failed || "Benchmark Failed";
+                header.innerHTML = `
+                    <i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
+                    <h2 style="margin: 0;">${failText}</h2>
+                    <div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">${data.error}</div>
+                    <button class="btn-secondary" onclick="resetUI()" style="margin-top:20px; background: white; color: #c0392b;">
+                        <i class="fas fa-arrow-left"></i> <span data-i18n="btn_back">Back to Connection Details</span>
+                    </button>
+                `;
+                return;
+            }
 
-            } else if (data.Completed) {
+            if (data.Completed) {
                 document.getElementById('progressCard').style.display = 'none';
                 document.getElementById('resultsCard').style.display = 'block';
 
@@ -831,9 +860,23 @@
                 else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
                 document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
             }
-            if (data.DNS) {
-                if (data.DNS.resolution_time > 0) {
-                    document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
+            if (data.DNS && data.DNS.resolution_time > 0) {
+                document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
+            }
+
+            // Advanced Network
+            if (data.advanced_net) {
+                document.getElementById('advNetStats').style.display = 'block';
+                document.getElementById('valSSL').innerText = data.advanced_net.tls_handshake_ms.toFixed(1) + " ms";
+                document.getElementById('valMTU').innerText = data.advanced_net.mtu ? data.advanced_net.mtu + " B" : "Unknown";
+                const vpnEl = document.getElementById('valVPN');
+                if (data.advanced_net.vpn_detected) {
+                    vpnEl.innerText = "VPN: " + data.advanced_net.vpn_type;
+                    if (data.advanced_net.proxy_detected) vpnEl.innerText += " (Proxy)";
+                } else if (data.advanced_net.proxy_detected) {
+                    vpnEl.innerText = "Proxy Detected";
+                } else {
+                    vpnEl.innerText = "";
                 }
             }
 
@@ -842,9 +885,16 @@
                 document.getElementById('sysOS').innerText = data.SystemOS;
                 document.getElementById('sysCPU').innerText = data.CPU.Model;
                 document.getElementById('sysCPUUsage').innerText = data.CPU.Usage.toFixed(1) + "%";
+                document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
                 document.getElementById('sysRAMTotal').innerText = data.RAM.Total;
                 document.getElementById('sysRAMUsed').innerText = data.RAM.Used + " (" + data.RAM.Usage.toFixed(1) + "%)";
                 document.getElementById('sysRAMFree').innerText = data.RAM.Free;
+            }
+
+            // Disk IO
+            if (data.disk_io) {
+                document.getElementById('diskWrite').innerText = data.disk_io.write_mbps.toFixed(1) + " MB/s";
+                document.getElementById('diskRead').innerText = data.disk_io.read_mbps.toFixed(1) + " MB/s";
             }
             if (data.LocalNetwork) {
                 document.getElementById('netConnType').innerText = data.LocalNetwork.ConnectionType;
@@ -1012,6 +1062,39 @@
                 alert("Error: " + e);
                 location.reload();
             }
+        }
+
+        async function cancelTest() {
+            try {
+                await fetch('/run/cancel', { method: 'POST' });
+                document.getElementById('cancelBtn').disabled = true;
+                document.getElementById('cancelBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+            } catch (e) {
+                console.error("Cancel error", e);
+            }
+        }
+
+        function resetUI() {
+            document.getElementById('resultsCard').style.display = 'none';
+            document.getElementById('progressCard').style.display = 'none';
+            document.getElementById('loginCard').style.display = 'block';
+
+            // Reset progress
+            setProgress(0);
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('currentStatus').innerText = translations[currentLang].status_initializing;
+
+            // Reset stages
+            ['system', 'network', 'connect', 'benchmark', 'report'].forEach(s => {
+                const el = document.getElementById('stage-' + s);
+                el.classList.remove('active', 'done');
+            });
+            currentStage = '';
+
+            // Reset cancel button
+            const cBtn = document.getElementById('cancelBtn');
+            cBtn.disabled = false;
+            cBtn.innerHTML = `<i class="fas fa-times-circle"></i> <span data-i18n="btn_cancel">${translations[currentLang].btn_cancel}</span>`;
         }
     </script>
 </body>

@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
@@ -52,13 +53,36 @@ func formatBytes(b uint64) string {
 }
 
 // Run executes the full benchmark suite.
-func Run(opts BenchmarkOptions, reporter Reporter) {
+func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 	rpt := report.ReportData{
 		GeneratedAt: time.Now(),
 		TargetURL:   opts.URL,
 	}
 
 	reporter.Broadcast("Starting Benchmark...")
+
+	// 0. PRE-FLIGHT CLOUD CHECK
+	reporter.Broadcast("Pre-flight: Checking Nextcloud availability...")
+	client := webdav.NewClient(opts.URL, opts.User, opts.Pass, func(msg string) {
+		reporter.Broadcast(msg)
+	})
+
+	status, err := client.GetStatus(ctx)
+	if err != nil {
+		reporter.Broadcast(fmt.Sprintf("Pre-flight Error: %v", err))
+		rpt.Error = "Could not reach Nextcloud or invalid URL"
+		return
+	}
+	rpt.CloudCheck = report.CloudStatus{
+		Status:      status.ProductName,
+		Version:     status.VersionString,
+		Maintenance: status.Maintenance,
+	}
+	if status.Maintenance {
+		reporter.Broadcast("Warning: Server is in maintenance mode!")
+	}
+	reporter.Broadcast(fmt.Sprintf("Detected: %s %s", status.ProductName, status.VersionString))
+	reporter.SendResult(rpt)
 
 	// Ensure we always send the result at the end, even on error
 	defer func() {
@@ -84,6 +108,15 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 			Usage: sys.RAMUsage,
 		}
 		reporter.Broadcast(fmt.Sprintf("System: %s | CPU: %.1f%% | RAM: %.1f%% used", sys.OS, sys.CPUUsage, sys.RAMUsage))
+
+		// Run Disk Benchmark
+		reporter.Broadcast("Running Local Disk I/O Benchmark...")
+		disk, errDisk := system.RunDiskBenchmark()
+		if errDisk == nil {
+			rpt.DiskIO = report.DiskResult{WriteMBps: disk.WriteMBps, ReadMBps: disk.ReadMBps}
+			reporter.Broadcast(fmt.Sprintf("Disk Speed: Write=%.1f MB/s | Read=%.1f MB/s", disk.WriteMBps, disk.ReadMBps))
+		}
+
 		reporter.SendResult(rpt)
 	}
 
@@ -112,6 +145,27 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 		reporter.Broadcast(fmt.Sprintf("Ref Speed: %.2f Mbps Down / %.2f Mbps Up", stRes.DownloadSpeed, stRes.UploadSpeed))
 		reporter.SendResult(rpt)
 	}
+
+	// 1d. EXTENDED NETWORK INFO
+	reporter.Broadcast("Detecting Advanced Network Stats (SSL, VPN, MTU)...")
+	extNet := network.GetExtendedNetworkInfo()
+	rpt.AdvancedNet.VPNDetected = extNet.VPNDetected
+	rpt.AdvancedNet.VPNType = extNet.VPNType
+	rpt.AdvancedNet.ProxyDetected = extNet.ProxyDetected
+	rpt.AdvancedNet.MTU = extNet.MTU
+
+	tlsDur, errTLS := network.MeasureTLSHandshake(opts.URL)
+	if errTLS == nil {
+		rpt.AdvancedNet.TLSHandshakeMs = float64(tlsDur.Milliseconds())
+		reporter.Broadcast(fmt.Sprintf("SSL Handshake: %.1f ms", rpt.AdvancedNet.TLSHandshakeMs))
+	}
+	if extNet.VPNDetected {
+		reporter.Broadcast(fmt.Sprintf("VPN Detected: %s", extNet.VPNType))
+	}
+	if extNet.ProxyDetected {
+		reporter.Broadcast("Proxy Detected!")
+	}
+	reporter.SendResult(rpt)
 
 	// 2. NETWORK - Parse URL properly using net/url
 	parsedURL, err := url.Parse(opts.URL)
@@ -180,13 +234,11 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// 3. WEBDAV
 	reporter.Broadcast("Connecting to Nextcloud WebDAV...")
-	client := webdav.NewClient(opts.URL, opts.User, opts.Pass, func(msg string) {
-		reporter.Broadcast(msg) // Forward WebDAV logs directly
-	})
-	caps, err := client.GetCapabilities()
+	// Client already created in pre-flight
+	caps, err := client.GetCapabilities(ctx)
 	if err != nil {
 		reporter.Broadcast(fmt.Sprintf("Error: %v", err))
-		rpt.Error = fmt.Sprintf("Failed to connect to Nextcloud: %v", err)
+		rpt.Error = fmt.Sprintf("Failed to get capabilities: %v", err)
 		return
 	}
 	rpt.ServerVer = caps.Ocs.Data.Version.String
@@ -194,16 +246,35 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	testFolder := fmt.Sprintf("perf-test-%d", time.Now().Unix())
 	reporter.Broadcast("Creating test directory...")
-	if err := client.CreateDirectory(testFolder); err != nil {
+	if err := client.CreateDirectory(ctx, testFolder); err != nil {
 		reporter.Broadcast(fmt.Sprintf("Error creating folder: %v", err))
 		rpt.Error = fmt.Sprintf("Failed to create test folder: %v", err)
 		return
 	}
 
+	// Helper for CPU monitoring
+	monitorDone := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-monitorDone:
+				return
+			case <-ticker.C:
+				usage := system.GetCurrentCPUUsage()
+				if usage > rpt.PeakCPUUsage {
+					rpt.PeakCPUUsage = usage
+				}
+			}
+		}
+	}()
+	defer close(monitorDone)
+
 	// 4. BENCHMARKS
 	// Small Files: 5 x 512KB
 	reporter.Broadcast("Starting Small Files Test (5 x 512KB)...")
-	resSmall, err := benchmark.RunSmallFiles(client, testFolder, "test_small_", 5, 512*1024, 5)
+	resSmall, err := benchmark.RunSmallFiles(ctx, client, testFolder, "test_small_", 5, 512*1024, 5)
 	if err != nil {
 		rpt.SmallFiles.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Small Files Error: %v", err))
@@ -214,7 +285,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// Small Files Download
 	reporter.Broadcast("Starting Small Files Download (5 x 512KB)...")
-	resSmallDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_small_", 5, 5)
+	resSmallDown, err := benchmark.RunDownloadSmallFiles(ctx, client, testFolder, "test_small_", 5, 5)
 	if err != nil {
 		rpt.SmallFilesDown.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Download Error: %v", err))
@@ -225,7 +296,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// Medium Files: 3 x 5MB (sequential for accurate speed measurement)
 	reporter.Broadcast("Starting Medium Files Test (3 x 5MB)...")
-	resMedium, err := benchmark.RunSmallFiles(client, testFolder, "test_medium_", 3, 5*1024*1024, 1)
+	resMedium, err := benchmark.RunSmallFiles(ctx, client, testFolder, "test_medium_", 3, 5*1024*1024, 1)
 	if err != nil {
 		rpt.MediumFiles.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Medium Files Error: %v", err))
@@ -236,7 +307,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// Medium Files Download
 	reporter.Broadcast("Starting Medium Files Download (3 x 5MB)...")
-	resMediumDown, err := benchmark.RunDownloadSmallFiles(client, testFolder, "test_medium_", 3, 1)
+	resMediumDown, err := benchmark.RunDownloadSmallFiles(ctx, client, testFolder, "test_medium_", 3, 1)
 	if err != nil {
 		rpt.MediumFilesDown.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Medium Download Error: %v", err))
@@ -247,7 +318,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// Large File: 256MB with Chunking
 	reporter.Broadcast("Starting Large File Test (256MB with Chunking)...")
-	resLarge, err := benchmark.RunLargeFile(client, testFolder, 256*1024*1024, true)
+	resLarge, err := benchmark.RunLargeFile(ctx, client, testFolder, 256*1024*1024, true)
 	if err != nil {
 		rpt.LargeFile.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Large File Error: %v", err))
@@ -260,7 +331,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// Large File Download
 	reporter.Broadcast("Starting Large File Download...")
-	resLargeDown, err := benchmark.RunDownloadLargeFile(client, testFolder)
+	resLargeDown, err := benchmark.RunDownloadLargeFile(ctx, client, testFolder)
 	if err != nil {
 		rpt.LargeFileDown.Errors = []string{err.Error()}
 		reporter.Broadcast(fmt.Sprintf("Large Download Error: %v", err))
@@ -271,7 +342,7 @@ func Run(opts BenchmarkOptions, reporter Reporter) {
 
 	// CLEANUP FIRST (before report)
 	reporter.Broadcast("Cleaning up test files...")
-	if err := client.Delete(testFolder); err != nil {
+	if err := client.Delete(ctx, testFolder); err != nil {
 		reporter.Broadcast(fmt.Sprintf("Warning: Cleanup failed: %v", err))
 	}
 	reporter.Broadcast("Cleanup complete.")
