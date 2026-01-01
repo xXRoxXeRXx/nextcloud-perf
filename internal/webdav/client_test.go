@@ -1,6 +1,7 @@
 package webdav
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -37,7 +38,7 @@ func TestGetCapabilities(t *testing.T) {
 
 	// Test Client
 	client := NewClient(ts.URL, "testuser", "testpass", nil)
-	caps, err := client.GetCapabilities()
+	caps, err := client.GetCapabilities(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to get capabilities: %v", err)
 	}
@@ -74,7 +75,7 @@ func TestDownload(t *testing.T) {
 	client := NewClient(ts.URL, "testuser", "testpass", nil)
 
 	// Execute Download
-	rc, err := client.Download("/test.txt")
+	rc, err := client.Download(context.Background(), "/test.txt")
 	if err != nil {
 		t.Fatalf("Failed to download: %v", err)
 	}

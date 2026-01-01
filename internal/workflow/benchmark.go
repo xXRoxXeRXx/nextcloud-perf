@@ -61,6 +61,12 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 
 	reporter.Broadcast("Starting Benchmark...")
 
+	// Ensure we always send the result at the end, even on error
+	defer func() {
+		reporter.SendResult(rpt)
+		reporter.Broadcast("Benchmark Logic Finished.")
+	}()
+
 	// 0. PRE-FLIGHT CLOUD CHECK
 	reporter.Broadcast("Pre-flight: Checking Nextcloud availability...")
 	client := webdav.NewClient(opts.URL, opts.User, opts.Pass, func(msg string) {
@@ -69,10 +75,12 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 
 	status, err := client.GetStatus(ctx)
 	if err != nil {
-		reporter.Broadcast(fmt.Sprintf("Pre-flight Error: %v", err))
-		rpt.Error = "Could not reach Nextcloud or invalid URL"
+		errMsg := fmt.Sprintf("Pre-flight Error: %v", err)
+		reporter.Broadcast(errMsg)
+		rpt.Error = errMsg
 		return
 	}
+
 	rpt.CloudCheck = report.CloudStatus{
 		Status:      status.ProductName,
 		Version:     status.VersionString,
@@ -83,12 +91,6 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 	}
 	reporter.Broadcast(fmt.Sprintf("Detected: %s %s", status.ProductName, status.VersionString))
 	reporter.SendResult(rpt)
-
-	// Ensure we always send the result at the end, even on error
-	defer func() {
-		reporter.SendResult(rpt)
-		reporter.Broadcast("Benchmark Logic Finished.")
-	}()
 
 	// 1. SYSTEM INFO
 	reporter.Broadcast("Collecting System Information...")

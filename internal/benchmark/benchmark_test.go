@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -51,7 +52,7 @@ func TestRunSmallFiles(t *testing.T) {
 	}
 
 	// 2 files, 1KB each, 1 parallel
-	res, err := RunSmallFiles(client, "/test", "file_", 2, 1024, 1)
+	res, err := RunSmallFiles(context.Background(), client, "/test", "file_", 2, 1024, 1)
 	if err != nil {
 		t.Fatalf("RunSmallFiles failed: %v", err)
 	}
@@ -82,7 +83,7 @@ func TestRunDownloadSmallFiles(t *testing.T) {
 		},
 	}
 
-	res, err := RunDownloadSmallFiles(client, "/test", "file_", 2, 1)
+	res, err := RunDownloadSmallFiles(context.Background(), client, "/test", "file_", 2, 1)
 	if err != nil {
 		t.Fatalf("RunDownloadSmallFiles failed: %v", err)
 	}

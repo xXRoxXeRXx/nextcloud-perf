@@ -546,6 +546,7 @@
                 th_time: "Time (ms)",
                 th_status: "Status",
                 btn_cancel: "Cancel Test",
+                btn_back: "Back to Connection Details",
                 label_write: "Write:",
                 label_read: "Read:"
             },
@@ -609,8 +610,9 @@
                 th_time: "Zeit (ms)",
                 th_status: "Status",
                 btn_cancel: "Test abbrechen",
+                btn_back: "Zurück zu den Verbindungsdetails",
                 label_write: "Schreiben:",
-                label_read: "Lesen:"
+                label_read: "Read:"
             }
         };
 
@@ -754,288 +756,302 @@
             }
         });
 
-        evtSource.addEventListener("result", function (event) {
-            let data;
-            try {
-                data = JSON.parse(event.data);
-            } catch (e) {
-                console.error("JSON Parse Error", e, event.data);
+        function updateQualityDot(id, speed, limit, isLarge) {
+            const dot = document.getElementById(id);
+            if (!speed || speed <= 0 || !limit || limit <= 0) {
+                if (dot) dot.className = 'quality-indicator quality-none';
                 return;
             }
+            const ratio = speed / limit;
+            let quality = 'red';
+            if (isLarge) {
+                if (ratio > 0.85) quality = 'green';
+                else if (ratio > 0.55) quality = 'yellow';
+            } else {
+                if (ratio > 0.50) quality = 'green';
+                else if (ratio > 0.30) quality = 'yellow';
+            }
+            if (dot) dot.className = `quality-indicator quality-${quality}`;
+            return quality;
+        }
 
-            setProgress(100);
+        function getConclusion(quality) {
+            switch (quality) {
+                case 'green': return `<span class="text-green" data-i18n="conc_excellent">${translations[currentLang].conc_excellent}</span>`;
+                case 'yellow': return `<span class="text-yellow" data-i18n="conc_solid">${translations[currentLang].conc_solid}</span>`;
+                case 'red': return `<span class="text-red" data-i18n="conc_optimize">${translations[currentLang].conc_optimize}</span>`;
+                default: return '';
+            }
+        }
 
-            function updateQualityDot(id, speed, limit, isLarge) {
-                const dot = document.getElementById(id);
-                if (!speed || speed <= 0 || !limit || limit <= 0) {
-                    dot.className = 'quality-indicator quality-none';
+        function updateConclusion(id, q1, q2) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // Worst-case performance wins the conclusion
+            let finalQ = 'green';
+            if (q1 === 'red' || q2 === 'red') finalQ = 'red';
+            else if (q1 === 'yellow' || q2 === 'yellow') finalQ = 'yellow';
+            else if (q1 === 'none' || q2 === 'none') finalQ = '';
+
+            el.innerHTML = getConclusion(finalQ);
+        }
+
+        evtSource.addEventListener("result", function (event) {
+            try {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    console.error("JSON Parse Error", e, event.data);
                     return;
                 }
-                const ratio = speed / limit;
-                let quality = 'red';
-                if (isLarge) {
-                    if (ratio > 0.85) quality = 'green';
-                    else if (ratio > 0.55) quality = 'yellow';
-                } else {
-                    if (ratio > 0.50) quality = 'green';
-                    else if (ratio > 0.30) quality = 'yellow';
+
+                console.log("Benchmark Result received", data);
+                setProgress(100);
+
+                if (data.error) {
+                    document.getElementById('progressCard').style.display = 'none';
+                    document.getElementById('resultsCard').style.display = 'block';
+
+                    // Update header to red failure state
+                    const header = document.querySelector('#resultsCard > div:first-child');
+                    header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                    const failText = translations[currentLang].benchmark_failed || "Benchmark Failed";
+                    const backText = translations[currentLang].btn_back || "Back to Connection Details";
+                    header.innerHTML = `
+                        <i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
+                        <h2 style="margin: 0;">${failText}</h2>
+                        <div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">${data.error}</div>
+                        <button class="btn-secondary" onclick="resetUI()" style="margin-top:20px; background: white; color: #c0392b; cursor: pointer;">
+                            <i class="fas fa-arrow-left"></i> <span>${backText}</span>
+                        </button>
+                    `;
+                    return;
                 }
-                dot.className = `quality-indicator quality-${quality}`;
-                return quality;
-            }
 
-            function getConclusion(quality) {
-                switch (quality) {
-                    case 'green': return `<span class="text-green" data-i18n="conc_excellent">${translations[currentLang].conc_excellent}</span>`;
-                    case 'yellow': return `<span class="text-yellow" data-i18n="conc_solid">${translations[currentLang].conc_solid}</span>`;
-                    case 'red': return `<span class="text-red" data-i18n="conc_optimize">${translations[currentLang].conc_optimize}</span>`;
-                    default: return '';
+                if (data.Completed) {
+                    document.getElementById('progressCard').style.display = 'none';
+                    document.getElementById('resultsCard').style.display = 'block';
+
+                    // Reset header to green success state (in case of retry)
+                    const header = document.querySelector('#resultsCard > div:first-child');
+                    header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
+                    const successText = translations[currentLang].benchmark_completed;
+                    header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + successText + '</h2>';
                 }
-            }
 
-            function updateConclusion(id, q1, q2) {
-                const el = document.getElementById(id);
-                // Worst-case performance wins the conclusion
-                let finalQ = 'green';
-                if (q1 === 'red' || q2 === 'red') finalQ = 'red';
-                else if (q1 === 'yellow' || q2 === 'yellow') finalQ = 'yellow';
-                else if (q1 === 'none' || q2 === 'none') finalQ = '';
+                // Populate Speed Results (Upload)
+                document.getElementById('resSmall').innerText = (data.SmallFiles && data.SmallFiles.speed_mbps > 0) ? (data.SmallFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
+                document.getElementById('resMedium').innerText = (data.MediumFiles && data.MediumFiles.speed_mbps > 0) ? (data.MediumFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
+                document.getElementById('resLarge').innerText = (data.LargeFile && data.LargeFile.speed_mbps > 0) ? (data.LargeFile.speed_mbps.toFixed(2) + " MB/s") : "--";
 
-                el.innerHTML = getConclusion(finalQ);
-            }
+                // Populate Speed Results (Download)
+                document.getElementById('resSmallDown').innerText = (data.SmallFilesDown && data.SmallFilesDown.speed_mbps > 0) ? (data.SmallFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
+                document.getElementById('resMediumDown').innerText = (data.MediumFilesDown && data.MediumFilesDown.speed_mbps > 0) ? (data.MediumFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
+                document.getElementById('resLargeDown').innerText = (data.LargeFileDown && data.LargeFileDown.speed_mbps > 0) ? (data.LargeFileDown.speed_mbps.toFixed(2) + " MB/s") : "--";
 
-            if (data.error) {
-                document.getElementById('progressCard').style.display = 'none';
-                document.getElementById('resultsCard').style.display = 'block';
+                // ... the rest of the updates ...
 
-                // Update header to red failure state
-                const header = document.querySelector('#resultsCard > div:first-child');
-                header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
-                const failText = translations[currentLang].benchmark_failed || "Benchmark Failed";
-                header.innerHTML = `
-                    <i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
-                    <h2 style="margin: 0;">${failText}</h2>
-                    <div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">${data.error}</div>
-                    <button class="btn-secondary" onclick="resetUI()" style="margin-top:20px; background: white; color: #c0392b;">
-                        <i class="fas fa-arrow-left"></i> <span data-i18n="btn_back">Back to Connection Details</span>
-                    </button>
-                `;
-                return;
-            }
+                // Network Summary
+                if (data.PingStats) {
+                    document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
+                    document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
 
-            if (data.Completed) {
-                document.getElementById('progressCard').style.display = 'none';
-                document.getElementById('resultsCard').style.display = 'block';
+                    let pingQ = 'green';
+                    if (data.PingStats.avg_ms > 60) pingQ = 'red';
+                    else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
+                    document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
 
-                // Reset header to green success state (in case of retry)
-                const header = document.querySelector('#resultsCard > div:first-child');
-                header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
-                const successText = translations[currentLang].benchmark_completed;
-                header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + successText + '</h2>';
-            }
-
-
-            // Populate Speed Results (Upload)
-            document.getElementById('resSmall').innerText = (data.SmallFiles.speed_mbps > 0) ? (data.SmallFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resMedium').innerText = (data.MediumFiles.speed_mbps > 0) ? (data.MediumFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resLarge').innerText = (data.LargeFile.speed_mbps > 0) ? (data.LargeFile.speed_mbps.toFixed(2) + " MB/s") : "--";
-
-            // Populate Speed Results (Download)
-            document.getElementById('resSmallDown').innerText = (data.SmallFilesDown.speed_mbps > 0) ? (data.SmallFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resMediumDown').innerText = (data.MediumFilesDown.speed_mbps > 0) ? (data.MediumFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
-            document.getElementById('resLargeDown').innerText = (data.LargeFileDown.speed_mbps > 0) ? (data.LargeFileDown.speed_mbps.toFixed(2) + " MB/s") : "--";
-
-            // Network Summary
-            if (data.PingStats) {
-                document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
-                document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
-
-                let pingQ = 'green';
-                if (data.PingStats.avg_ms > 60) pingQ = 'red';
-                else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
-                document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
-
-                let lossQ = 'green';
-                if (data.PingStats.packet_loss > 1) lossQ = 'red';
-                else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
-                document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
-            }
-            if (data.DNS && data.DNS.resolution_time > 0) {
-                document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
-            }
-
-            // Advanced Network
-            if (data.advanced_net) {
-                document.getElementById('advNetStats').style.display = 'block';
-                document.getElementById('valSSL').innerText = data.advanced_net.tls_handshake_ms.toFixed(1) + " ms";
-                document.getElementById('valMTU').innerText = data.advanced_net.mtu ? data.advanced_net.mtu + " B" : "Unknown";
-                const vpnEl = document.getElementById('valVPN');
-                if (data.advanced_net.vpn_detected) {
-                    vpnEl.innerText = "VPN: " + data.advanced_net.vpn_type;
-                    if (data.advanced_net.proxy_detected) vpnEl.innerText += " (Proxy)";
-                } else if (data.advanced_net.proxy_detected) {
-                    vpnEl.innerText = "Proxy Detected";
-                } else {
-                    vpnEl.innerText = "";
+                    let lossQ = 'green';
+                    if (data.PingStats.packet_loss > 1) lossQ = 'red';
+                    else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
+                    document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
                 }
-            }
-
-            // System Info
-            if (data.SystemOS) {
-                document.getElementById('sysOS').innerText = data.SystemOS;
-                document.getElementById('sysCPU').innerText = data.CPU.Model;
-                document.getElementById('sysCPUUsage').innerText = data.CPU.Usage.toFixed(1) + "%";
-                document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
-                document.getElementById('sysRAMTotal').innerText = data.RAM.Total;
-                document.getElementById('sysRAMUsed').innerText = data.RAM.Used + " (" + data.RAM.Usage.toFixed(1) + "%)";
-                document.getElementById('sysRAMFree').innerText = data.RAM.Free;
-            }
-
-            // Disk IO
-            if (data.disk_io) {
-                document.getElementById('diskWrite').innerText = data.disk_io.write_mbps.toFixed(1) + " MB/s";
-                document.getElementById('diskRead').innerText = data.disk_io.read_mbps.toFixed(1) + " MB/s";
-            }
-            if (data.LocalNetwork) {
-                document.getElementById('netConnType').innerText = data.LocalNetwork.ConnectionType;
-                document.getElementById('netPrimaryIF').innerText = data.LocalNetwork.PrimaryIF;
-
-                // Display all interfaces in the card
-                const netCard = document.getElementById('netConnType').parentNode;
-                // Remove any previously added interface details but keep the headers
-                // A simple way is to check if we already added them, or just strictly control the structure.
-                // Ideally, we have a container. Let's make one if it doesn't exist, or just append distinctively.
-                let ifContainer = document.getElementById('netInterfacesContainer');
-                if (!ifContainer) {
-                    ifContainer = document.createElement('div');
-                    ifContainer.id = 'netInterfacesContainer';
-                    ifContainer.style.marginTop = '10px';
-                    ifContainer.style.fontSize = '0.85em';
-                    netCard.appendChild(ifContainer);
+                if (data.DNS && data.DNS.resolution_time > 0) {
+                    document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
                 }
-                ifContainer.innerHTML = ''; // Clear previous
 
-                if (data.LocalNetwork.Interfaces) {
-                    data.LocalNetwork.Interfaces.forEach(iface => {
-                        const div = document.createElement('div');
-                        div.style.marginBottom = '5px';
-                        div.innerHTML = `<strong>${iface.Name}</strong> (${iface.Type}): ${iface.IPAddress}`;
-                        if (iface.LinkSpeed) {
-                            div.innerHTML += `<br>Speed: ${iface.LinkSpeed}`;
-                        }
-                        ifContainer.appendChild(div);
-                    });
-                }
-            }
-
-            // Reference Speed
-            if (data.Speedtest) {
-                if (data.Speedtest.error) {
-                    document.getElementById('refDown').innerText = "Error";
-                    document.getElementById('refUp').innerText = "Error";
-                    document.getElementById('refDown').style.color = "#cc0000";
-                    document.getElementById('refUp').style.color = "#cc0000";
-                } else {
-                    const uMbps = data.Speedtest.upload_speed || 0;
-                    const dMbps = data.Speedtest.download_speed || 0;
-                    const uMBps = data.Speedtest.upload_mbps || 0;
-                    const dMBps = data.Speedtest.download_mbps || 0;
-
-                    document.getElementById('refUp').innerText = `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`;
-                    document.getElementById('refDown').innerText = `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`;
-
-                    // Evaluate Quality
-                    const limitUp = Math.min(uMBps, 10);
-                    const limitDown = Math.min(dMBps, 50);
-
-                    const qSUp = updateQualityDot('qSmallUp', data.SmallFiles.speed_mbps, limitUp, false);
-                    const qSDown = updateQualityDot('qSmallDown', data.SmallFilesDown.speed_mbps, limitDown, false);
-                    updateConclusion('concSmall', qSUp, qSDown);
-
-                    const qMUp = updateQualityDot('qMedUp', data.MediumFiles.speed_mbps, limitUp, false);
-                    const qMDown = updateQualityDot('qMedDown', data.MediumFilesDown.speed_mbps, limitDown, false);
-                    updateConclusion('concMed', qMUp, qMDown);
-
-                    const qLUp = updateQualityDot('qLargeUp', data.LargeFile.speed_mbps, limitUp, true);
-                    const qLDown = updateQualityDot('qLargeDown', data.LargeFileDown.speed_mbps, limitDown, true);
-                    updateConclusion('concLarge', qLUp, qLDown);
-
-                    // ISP & Server Info
-                    if (data.Speedtest.isp) {
-                        document.getElementById('resProvider').innerText = data.Speedtest.isp;
-                    }
-                    if (data.Speedtest.server_name) {
-                        document.getElementById('resStServer').innerText = data.Speedtest.server_name;
+                // Advanced Network
+                if (data.advanced_net) {
+                    document.getElementById('advNetStats').style.display = 'block';
+                    document.getElementById('valSSL').innerText = data.advanced_net.tls_handshake_ms.toFixed(1) + " ms";
+                    document.getElementById('valMTU').innerText = data.advanced_net.mtu ? data.advanced_net.mtu + " B" : "Unknown";
+                    const vpnEl = document.getElementById('valVPN');
+                    if (data.advanced_net.vpn_detected) {
+                        vpnEl.innerText = "VPN: " + data.advanced_net.vpn_type;
+                        if (data.advanced_net.proxy_detected) vpnEl.innerText += " (Proxy)";
+                    } else if (data.advanced_net.proxy_detected) {
+                        vpnEl.innerText = "Proxy Detected";
+                    } else {
+                        vpnEl.innerText = "";
                     }
                 }
-            }
 
-            // Expanded Network Diagnostics
-            if (data.PingStats) {
-                // Use snake_case keys as defined in detailed.go JSON tags
-                document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
-                document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
-
-                // Detailed Ping
-                document.getElementById('pingCount').innerText = data.PingStats.count;
-                document.getElementById('pingAvg').innerText = data.PingStats.avg_ms.toFixed(2) + " ms";
-                document.getElementById('pingMin').innerText = data.PingStats.min_ms.toFixed(2);
-                document.getElementById('pingMax').innerText = data.PingStats.max_ms.toFixed(2);
-                document.getElementById('pingLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
-
-                let pingQ = 'green';
-                if (data.PingStats.avg_ms > 60) pingQ = 'red';
-                else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
-                document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
-
-                let lossQ = 'green';
-                if (data.PingStats.packet_loss > 1) lossQ = 'red';
-                else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
-                document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
-
-                // Render Ping Table
-                const tbody = document.getElementById('pingTableBody');
-                tbody.innerHTML = '';
-                if (data.PingStats.results) {
-                    data.PingStats.results.forEach(r => {
-                        const row = document.createElement('tr');
-                        // r is PingResult, strict Go struct has no JSON tags so PascalCase? 
-                        // Wait, DetailedPingStats has Results []PingResult `json:"results"`.
-                        // PingResult struct in detailed.go has NO json tags on fields: Seq, TimeMs, Success.
-                        // So they should be PascalCase.
-                        row.innerHTML = `<td>${r.Seq}</td>
-                                         <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
-                                         <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
-                        tbody.appendChild(row);
-                    });
+                // System Info
+                if (data.SystemOS) {
+                    document.getElementById('sysOS').innerText = data.SystemOS;
+                    document.getElementById('sysCPU').innerText = data.CPU.Model;
+                    document.getElementById('sysCPUUsage').innerText = data.CPU.Usage.toFixed(1) + "%";
+                    document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
+                    document.getElementById('sysRAMTotal').innerText = data.RAM.Total;
+                    document.getElementById('sysRAMUsed').innerText = data.RAM.Used + " (" + data.RAM.Usage.toFixed(1) + "%)";
+                    document.getElementById('sysRAMFree').innerText = data.RAM.Free;
                 }
-            }
-            if (data.DNS) {
-                // DNS uses snake_case tags
-                if (data.DNS.resolution_time > 0) {
-                    document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(2) + " ms";
-                    const dnsTimeEl = document.getElementById('dnsTime');
-                    if (dnsTimeEl) dnsTimeEl.innerText = data.DNS.resolution_time.toFixed(2) + " ms";
 
-                    const ipsDiv = document.getElementById('dnsIPs');
-                    ipsDiv.innerHTML = '';
-                    if (data.DNS.resolved_ips) {
-                        data.DNS.resolved_ips.forEach(ip => {
-                            const d = document.createElement('div');
-                            d.innerText = "- " + ip;
-                            ipsDiv.appendChild(d);
+                // Disk IO
+                if (data.disk_io) {
+                    document.getElementById('diskWrite').innerText = data.disk_io.write_mbps.toFixed(1) + " MB/s";
+                    document.getElementById('diskRead').innerText = data.disk_io.read_mbps.toFixed(1) + " MB/s";
+                }
+                if (data.LocalNetwork) {
+                    document.getElementById('netConnType').innerText = data.LocalNetwork.ConnectionType;
+                    document.getElementById('netPrimaryIF').innerText = data.LocalNetwork.PrimaryIF;
+
+                    // Display all interfaces in the card
+                    const netCard = document.getElementById('netConnType').parentNode;
+                    // Remove any previously added interface details but keep the headers
+                    // A simple way is to check if we already added them, or just strictly control the structure.
+                    // Ideally, we have a container. Let's make one if it doesn't exist, or just append distinctively.
+                    let ifContainer = document.getElementById('netInterfacesContainer');
+                    if (!ifContainer) {
+                        ifContainer = document.createElement('div');
+                        ifContainer.id = 'netInterfacesContainer';
+                        ifContainer.style.marginTop = '10px';
+                        ifContainer.style.fontSize = '0.85em';
+                        netCard.appendChild(ifContainer);
+                    }
+                    ifContainer.innerHTML = ''; // Clear previous
+
+                    if (data.LocalNetwork.Interfaces) {
+                        data.LocalNetwork.Interfaces.forEach(iface => {
+                            const div = document.createElement('div');
+                            div.style.marginBottom = '5px';
+                            div.innerHTML = `<strong>${iface.Name}</strong> (${iface.Type}): ${iface.IPAddress}`;
+                            if (iface.LinkSpeed) {
+                                div.innerHTML += `<br>Speed: ${iface.LinkSpeed}`;
+                            }
+                            ifContainer.appendChild(div);
                         });
                     }
                 }
-            }
-            if (data.Traceroute) {
-                const trBox = document.getElementById('tracerouteBox');
-                trBox.innerHTML = '';
-                data.Traceroute.forEach(line => {
-                    const d = document.createElement('div');
-                    d.innerText = line;
-                    trBox.appendChild(d);
-                });
+
+                // Reference Speed
+                if (data.Speedtest) {
+                    if (data.Speedtest.error) {
+                        document.getElementById('refDown').innerText = "Error";
+                        document.getElementById('refUp').innerText = "Error";
+                        document.getElementById('refDown').style.color = "#cc0000";
+                        document.getElementById('refUp').style.color = "#cc0000";
+                    } else {
+                        const uMbps = data.Speedtest.upload_speed || 0;
+                        const dMbps = data.Speedtest.download_speed || 0;
+                        const uMBps = data.Speedtest.upload_mbps || 0;
+                        const dMBps = data.Speedtest.download_mbps || 0;
+
+                        document.getElementById('refUp').innerText = `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`;
+                        document.getElementById('refDown').innerText = `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`;
+
+                        // Evaluate Quality
+                        const limitUp = Math.min(uMBps, 10);
+                        const limitDown = Math.min(dMBps, 50);
+
+                        const qSUp = updateQualityDot('qSmallUp', data.SmallFiles.speed_mbps, limitUp, false);
+                        const qSDown = updateQualityDot('qSmallDown', data.SmallFilesDown.speed_mbps, limitDown, false);
+                        updateConclusion('concSmall', qSUp, qSDown);
+
+                        const qMUp = updateQualityDot('qMedUp', data.MediumFiles.speed_mbps, limitUp, false);
+                        const qMDown = updateQualityDot('qMedDown', data.MediumFilesDown.speed_mbps, limitDown, false);
+                        updateConclusion('concMed', qMUp, qMDown);
+
+                        const qLUp = updateQualityDot('qLargeUp', data.LargeFile.speed_mbps, limitUp, true);
+                        const qLDown = updateQualityDot('qLargeDown', data.LargeFileDown.speed_mbps, limitDown, true);
+                        updateConclusion('concLarge', qLUp, qLDown);
+
+                        // ISP & Server Info
+                        if (data.Speedtest.isp) {
+                            document.getElementById('resProvider').innerText = data.Speedtest.isp;
+                        }
+                        if (data.Speedtest.server_name) {
+                            document.getElementById('resStServer').innerText = data.Speedtest.server_name;
+                        }
+                    }
+                }
+
+                // Expanded Network Diagnostics
+                if (data.PingStats) {
+                    // Use snake_case keys as defined in detailed.go JSON tags
+                    document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
+                    document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
+
+                    // Detailed Ping
+                    document.getElementById('pingCount').innerText = data.PingStats.count;
+                    document.getElementById('pingAvg').innerText = data.PingStats.avg_ms.toFixed(2) + " ms";
+                    document.getElementById('pingMin').innerText = data.PingStats.min_ms.toFixed(2);
+                    document.getElementById('pingMax').innerText = data.PingStats.max_ms.toFixed(2);
+                    document.getElementById('pingLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
+
+                    let pingQ = 'green';
+                    if (data.PingStats.avg_ms > 60) pingQ = 'red';
+                    else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
+                    document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
+
+                    let lossQ = 'green';
+                    if (data.PingStats.packet_loss > 1) lossQ = 'red';
+                    else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
+                    document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
+
+                    // Render Ping Table
+                    const tbody = document.getElementById('pingTableBody');
+                    tbody.innerHTML = '';
+                    if (data.PingStats.results) {
+                        data.PingStats.results.forEach(r => {
+                            const row = document.createElement('tr');
+                            // r is PingResult, strict Go struct has no JSON tags so PascalCase? 
+                            // Wait, DetailedPingStats has Results []PingResult `json:"results"`.
+                            // PingResult struct in detailed.go has NO json tags on fields: Seq, TimeMs, Success.
+                            // So they should be PascalCase.
+                            row.innerHTML = `<td>${r.Seq}</td>
+                                         <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
+                                         <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
+                            tbody.appendChild(row);
+                        });
+                    }
+                }
+                if (data.DNS) {
+                    // DNS uses snake_case tags
+                    if (data.DNS.resolution_time > 0) {
+                        document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(2) + " ms";
+                        const dnsTimeEl = document.getElementById('dnsTime');
+                        if (dnsTimeEl) dnsTimeEl.innerText = data.DNS.resolution_time.toFixed(2) + " ms";
+
+                        const ipsDiv = document.getElementById('dnsIPs');
+                        ipsDiv.innerHTML = '';
+                        if (data.DNS.resolved_ips) {
+                            data.DNS.resolved_ips.forEach(ip => {
+                                const d = document.createElement('div');
+                                d.innerText = "- " + ip;
+                                ipsDiv.appendChild(d);
+                            });
+                        }
+                    }
+                }
+                if (data.Traceroute) {
+                    const trBox = document.getElementById('tracerouteBox');
+                    trBox.innerHTML = '';
+                    data.Traceroute.forEach(line => {
+                        const d = document.createElement('div');
+                        d.innerText = line;
+                        trBox.appendChild(d);
+                    });
+                }
+            } catch (err) {
+                console.error("Result processing error", err);
+                const logDiv = document.getElementById("log");
+                const msgDiv = document.createElement('div');
+                msgDiv.style.color = 'red';
+                msgDiv.textContent = "UI Error: " + err.message;
+                logDiv.appendChild(msgDiv);
+                logDiv.scrollTop = logDiv.scrollHeight;
             }
         });
 
