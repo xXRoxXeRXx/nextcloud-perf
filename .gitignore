@@ -32,3 +32,4 @@ Thumbs.db
 # Debug files
 debug
 *.log
+*_FINDINGS.md

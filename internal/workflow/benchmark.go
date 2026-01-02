@@ -299,6 +299,7 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		rpt.SmallFilesDown = report.SpeedResult{SpeedMBps: resSmallDown.SpeedMBps, Duration: resSmallDown.Duration, Errors: errsToStrings(resSmallDown.Errors)}
 		reporter.Broadcast(fmt.Sprintf("Small Files Download: %.2f MB/s", resSmallDown.SpeedMBps))
 	}
+	reporter.SendResult(rpt) // Send updated results
 
 	// Medium Files: 3 x 5MB (sequential for accurate speed measurement)
 	reporter.Broadcast("Starting Medium Files Test (3 x 5MB)...")
@@ -321,6 +322,7 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		rpt.MediumFilesDown = report.SpeedResult{SpeedMBps: resMediumDown.SpeedMBps, Duration: resMediumDown.Duration, Errors: errsToStrings(resMediumDown.Errors)}
 		reporter.Broadcast(fmt.Sprintf("Medium Files Download: %.2f MB/s", resMediumDown.SpeedMBps))
 	}
+	reporter.SendResult(rpt) // Send updated results
 
 	// Large File: 256MB with Chunking
 	reporter.Broadcast("Starting Large File Test (256MB with Chunking)...")
@@ -345,6 +347,7 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		rpt.LargeFileDown = report.SpeedResult{SpeedMBps: resLargeDown.SpeedMBps, Duration: resLargeDown.Duration, Errors: errsToStrings(resLargeDown.Errors)}
 		reporter.Broadcast(fmt.Sprintf("Large File Download: %.2f MB/s", resLargeDown.SpeedMBps))
 	}
+	reporter.SendResult(rpt) // Send updated results
 
 	// CLEANUP FIRST (before report)
 	reporter.Broadcast("Cleaning up test files...")

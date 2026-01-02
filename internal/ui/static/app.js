@@ -148,6 +148,13 @@ function updateConclusion(id, q1, q2) {
     else if (q1 === 'none' || q2 === 'none') finalQ = '';
 
     el.innerHTML = getConclusion(finalQ);
+    
+    // Update border-left color of parent perf-card
+    const perfCard = el.closest('.perf-card');
+    if (perfCard && finalQ) {
+        const borderColor = finalQ === 'green' ? '#27ae60' : (finalQ === 'yellow' ? '#f1c40f' : '#e74c3c');
+        perfCard.style.borderLeft = `4px solid ${borderColor}`;
+    }
 }
 
 evtSource.addEventListener("result", function (event) {
@@ -163,6 +170,11 @@ evtSource.addEventListener("result", function (event) {
         console.log("Benchmark Result received", data);
         if (data.completed || data.error) {
             setProgress(100);
+        }
+
+        // Set Target URL
+        if (data.target_url) {
+            setSafeText('resURL', data.target_url);
         }
 
         if (data.error) {
@@ -198,34 +210,55 @@ evtSource.addEventListener("result", function (event) {
                 }
             });
 
-            header.style.background = 'linear-gradient(135deg, #27ae60 0%, #166534 100%)';
-            const successText = translations[currentLang].benchmark_completed;
-            header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 60px; margin-bottom: 15px;"></i><h2 style="margin: 0; font-size: 2em;">' + successText + '</h2>';
+            const header = document.getElementById('resultHeader');
+            if (header) {
+                header.style.background = 'linear-gradient(135deg, #27ae60 0%, #166534 100%)';
+                const successText = translations[currentLang].benchmark_completed;
+                header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 60px; margin-bottom: 15px;"></i><h2 style="margin: 0; font-size: 2em;">' + successText + '</h2>';
+            }
         }
 
         // Populate results (Transfer Speeds)
         if (data.small_files) {
-            setSafeText('resSmall', (data.small_files.speed_mbps > 0) ? (data.small_files.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Small Files Data:", data.small_files);
+            const speedVal = (data.small_files.speed_mbps && data.small_files.speed_mbps > 0) ? (data.small_files.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resSmall to:", speedVal);
+            setSafeText('resSmall', speedVal);
             if (data.small_files.duration > 0) setSafeText('durSmallUp', (data.small_files.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.small_files_down) {
-            setSafeText('resSmallDown', (data.small_files_down.speed_mbps > 0) ? (data.small_files_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Small Files Down Data:", data.small_files_down);
+            const speedVal = (data.small_files_down.speed_mbps && data.small_files_down.speed_mbps > 0) ? (data.small_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resSmallDown to:", speedVal);
+            setSafeText('resSmallDown', speedVal);
             if (data.small_files_down.duration > 0) setSafeText('durSmallDown', (data.small_files_down.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.medium_files) {
-            setSafeText('resMedium', (data.medium_files.speed_mbps > 0) ? (data.medium_files.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Medium Files Data:", data.medium_files);
+            const speedVal = (data.medium_files.speed_mbps && data.medium_files.speed_mbps > 0) ? (data.medium_files.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resMedium to:", speedVal);
+            setSafeText('resMedium', speedVal);
             if (data.medium_files.duration > 0) setSafeText('durMedUp', (data.medium_files.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.medium_files_down) {
-            setSafeText('resMediumDown', (data.medium_files_down.speed_mbps > 0) ? (data.medium_files_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Medium Files Down Data:", data.medium_files_down);
+            const speedVal = (data.medium_files_down.speed_mbps && data.medium_files_down.speed_mbps > 0) ? (data.medium_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resMediumDown to:", speedVal);
+            setSafeText('resMediumDown', speedVal);
             if (data.medium_files_down.duration > 0) setSafeText('durMedDown', (data.medium_files_down.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.large_file) {
-            setSafeText('resLarge', (data.large_file.speed_mbps > 0) ? (data.large_file.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Large File Data:", data.large_file);
+            const speedVal = (data.large_file.speed_mbps && data.large_file.speed_mbps > 0) ? (data.large_file.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resLarge to:", speedVal);
+            setSafeText('resLarge', speedVal);
             if (data.large_file.duration > 0) setSafeText('durLargeUp', (data.large_file.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.large_file_down) {
-            setSafeText('resLargeDown', (data.large_file_down.speed_mbps > 0) ? (data.large_file_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            console.log("Large File Down Data:", data.large_file_down);
+            const speedVal = (data.large_file_down.speed_mbps && data.large_file_down.speed_mbps > 0) ? (data.large_file_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            console.log("Setting resLargeDown to:", speedVal);
+            setSafeText('resLargeDown', speedVal);
             if (data.large_file_down.duration > 0) setSafeText('durLargeDown', (data.large_file_down.duration / 1000000000).toFixed(1) + "s");
         }
 
@@ -340,11 +373,14 @@ evtSource.addEventListener("result", function (event) {
 
         if (data.local_network) {
             const ln = data.local_network;
-            document.getElementById('netConnType').innerText = ln.connection_type || "--";
-            document.getElementById('netPrimaryIF').innerText = ln.primary_if || "--";
+            const connTypeEl = document.getElementById('netConnType');
+            const primaryIfEl = document.getElementById('netPrimaryIF');
+            
+            if (connTypeEl) connTypeEl.innerText = ln.connection_type || "--";
+            if (primaryIfEl) primaryIfEl.innerText = ln.primary_if || "--";
 
             const listEl = document.getElementById('netInterfacesList');
-            if (listEl && ln.interfaces) {
+            if (listEl && ln.interfaces && ln.interfaces.length > 0) {
                 listEl.innerHTML = '';
                 ln.interfaces.forEach(iface => {
                     const row = document.createElement('div');
@@ -358,7 +394,7 @@ evtSource.addEventListener("result", function (event) {
                     }
 
                     const speedHtml = iface.link_speed && iface.link_speed !== 'Unknown'
-                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed} ${iface.link_speed}</div>`
+                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed || "Speed"}: ${iface.link_speed}</div>`
                         : '';
 
                     row.innerHTML = `
@@ -377,7 +413,7 @@ evtSource.addEventListener("result", function (event) {
             const badgeEl = document.getElementById('ncStatusBadge');
 
             if (detailEl) {
-                let statusText = `Nextcloud ${cc.version || "--"}`;
+                let statusText = `Nextcloud ${cc.version || data.server_ver || "--"}`;
                 if (cc.edition) statusText += ` (${cc.edition})`;
                 detailEl.innerText = statusText;
             }
@@ -411,15 +447,17 @@ evtSource.addEventListener("result", function (event) {
         if (data.speedtest) {
             const s = data.speedtest;
             if (s.error) {
-                document.getElementById('refDown').innerText = "Error";
-                document.getElementById('refUp').innerText = "Error";
+                setSafeText('refDown', "Error");
+                setSafeText('refUp', "Error");
+                setSafeText('resProvider', "Speedtest Error");
             } else {
                 const uMbps = s.upload_speed || 0;
                 const dMbps = s.download_speed || 0;
-                const uMBps = s.upload_mbps || 0;
-                const dMBps = s.download_mbps || 0;
-                document.getElementById('refUp').innerText = `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`;
-                document.getElementById('refDown').innerText = `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`;
+                const uMBps = s.upload_mbps || (uMbps / 8);
+                const dMBps = s.download_mbps || (dMbps / 8);
+                
+                setSafeText('refUp', `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`);
+                setSafeText('refDown', `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`);
 
                 const limitUp = Math.min(uMBps, 10);
                 const limitDown = Math.min(dMBps, 50);
@@ -442,8 +480,36 @@ evtSource.addEventListener("result", function (event) {
                     updateConclusion('concLarge', qLUp, qLDown);
                 }
 
-                if (s.isp) document.getElementById('resProvider').innerText = s.isp;
-                if (s.server_name) document.getElementById('resStServer').innerText = s.server_name;
+                if (s.isp) setSafeText('resProvider', s.isp);
+                if (s.server_name) setSafeText('resStServer', s.server_name);
+            }
+        } else {
+            // Falls Speedtest nicht verfügbar ist, zeige trotzdem die Upload/Download-Daten
+            if (data.small_files && data.small_files_down) {
+                const limitUp = 10; // Default limit
+                const limitDown = 50; // Default limit
+                
+                const qSUp = updateQualityDot('qSmallUp', data.small_files.speed_mbps, limitUp, false);
+                const qSDown = updateQualityDot('qSmallDown', data.small_files_down.speed_mbps, limitDown, false);
+                updateConclusion('concSmall', qSUp, qSDown);
+            }
+
+            if (data.medium_files && data.medium_files_down) {
+                const limitUp = 10;
+                const limitDown = 50;
+                
+                const qMUp = updateQualityDot('qMedUp', data.medium_files.speed_mbps, limitUp, false);
+                const qMDown = updateQualityDot('qMedDown', data.medium_files_down.speed_mbps, limitDown, false);
+                updateConclusion('concMed', qMUp, qMDown);
+            }
+
+            if (data.large_file && data.large_file_down) {
+                const limitUp = 10;
+                const limitDown = 50;
+                
+                const qLUp = updateQualityDot('qLargeUp', data.large_file.speed_mbps, limitUp, true);
+                const qLDown = updateQualityDot('qLargeDown', data.large_file_down.speed_mbps, limitDown, true);
+                updateConclusion('concLarge', qLUp, qLDown);
             }
         }
     } catch (err) {
@@ -544,5 +610,10 @@ function resetUI() {
     });
     document.querySelectorAll('.conclusion-text').forEach(c => {
         c.innerHTML = '';
+    });
+    
+    // Reset border colors of perf-cards to default
+    document.querySelectorAll('.perf-card').forEach(card => {
+        card.style.borderLeft = '5px solid #003d8f';
     });
 }
