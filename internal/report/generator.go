@@ -103,17 +103,17 @@ func (s SpeedResult) GetQualityColor(limitMBps float64, isLarge bool) string {
 	}
 	ratio := s.SpeedMBps / limitMBps
 	if isLarge {
-		if ratio > 0.85 {
+		if ratio > 0.70 {
 			return "#2ecc71"
 		} // Green
-		if ratio > 0.55 {
+		if ratio > 0.40 {
 			return "#f1c40f"
 		} // Yellow
 	} else {
-		if ratio > 0.50 {
+		if ratio > 0.40 {
 			return "#2ecc71"
 		} // Green
-		if ratio > 0.30 {
+		if ratio > 0.20 {
 			return "#f1c40f"
 		} // Yellow
 	}

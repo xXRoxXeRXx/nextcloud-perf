@@ -765,11 +765,11 @@
             const ratio = speed / limit;
             let quality = 'red';
             if (isLarge) {
-                if (ratio > 0.85) quality = 'green';
-                else if (ratio > 0.55) quality = 'yellow';
+                if (ratio > 0.70) quality = 'green';
+                else if (ratio > 0.40) quality = 'yellow';
             } else {
-                if (ratio > 0.50) quality = 'green';
-                else if (ratio > 0.30) quality = 'yellow';
+                if (ratio > 0.40) quality = 'green';
+                else if (ratio > 0.20) quality = 'yellow';
             }
             if (dot) dot.className = `quality-indicator quality-${quality}`;
             return quality;
