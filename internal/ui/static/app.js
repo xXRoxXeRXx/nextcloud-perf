@@ -315,10 +315,31 @@ evtSource.addEventListener("result", function (event) {
             document.getElementById('netConnType').innerText = ln.ConnectionType || "--";
             document.getElementById('netPrimaryIF').innerText = ln.PrimaryIF || "--";
 
-            // Populate IP if available
-            if (ln.Interfaces && ln.Interfaces.length > 0) {
-                const primary = ln.Interfaces.find(i => i.Name === ln.PrimaryIF) || ln.Interfaces[0];
-                document.getElementById('sysIP').innerText = primary.IPAddress;
+            const listEl = document.getElementById('netInterfacesList');
+            if (listEl && ln.Interfaces) {
+                listEl.innerHTML = '';
+                ln.Interfaces.forEach(iface => {
+                    const row = document.createElement('div');
+                    row.style.fontSize = '0.85em';
+                    row.style.marginBottom = '8px';
+                    row.style.padding = '5px';
+                    row.style.borderRadius = '4px';
+                    if (iface.Name === ln.PrimaryIF) {
+                        row.style.background = '#e8f4fd';
+                        row.style.borderLeft = '3px solid #003d8f';
+                    }
+
+                    const speedHtml = iface.LinkSpeed && iface.LinkSpeed !== 'Unknown'
+                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed} ${iface.LinkSpeed}</div>`
+                        : '';
+
+                    row.innerHTML = `
+                        <div style="font-weight: bold;">${iface.Name} (${iface.Type})</div>
+                        <div style="color: #666;">${iface.IPAddress}</div>
+                        ${speedHtml}
+                    `;
+                    listEl.appendChild(row);
+                });
             }
         }
 

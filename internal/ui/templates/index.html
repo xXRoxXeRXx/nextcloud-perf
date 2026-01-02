@@ -122,10 +122,12 @@
                 <div class="card" style="padding: 15px;">
                     <div style="font-size: 0.8em; color: gray;" data-i18n="label_local_network">Local Network</div>
                     <div style="font-weight: bold; font-size: 1.1em;" id="netConnType">--</div>
-                    <div style="margin-top:5px;"><span data-i18n="label_primary_if">Primary Interface:</span> <span
-                            id="netPrimaryIF">--</span></div>
-                    <div style="font-size: 0.85em; color: gray;" id="netIPSection">IP: <span id="sysIP"
-                            style="font-weight: bold; color: #333;">--</span></div>
+                    <div style="margin-top:5px; font-size: 0.9em;">
+                        <span data-i18n="label_primary_if">Primary Interface:</span> <span id="netPrimaryIF">--</span>
+                    </div>
+                    <div id="netInterfacesList" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
+                        <!-- Dynamically populated by app.js -->
+                    </div>
                     <div id="advNetStats"
                         style="margin-top:10px; font-size: 0.85em; background: #f8f9fa; padding: 10px; border-radius: 5px; display: none;">
                         <div>SSL Handshake: <span id="valSSL">--</span></div>

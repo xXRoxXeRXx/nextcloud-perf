@@ -61,7 +61,11 @@ const translations = {
         btn_cancel: "Cancel Test",
         btn_back: "Back to Connection Details",
         label_write: "Write:",
-        label_read: "Read:"
+        label_read: "Read:",
+        label_link_speed: "Link Speed:",
+        label_interface: "Interface",
+        label_type: "Type",
+        label_ip: "IP Address"
     },
     de: {
         title: "Nextcloud Performance Check",
@@ -125,7 +129,11 @@ const translations = {
         btn_cancel: "Test abbrechen",
         btn_back: "Zurück zu den Verbindungsdetails",
         label_write: "Schreiben:",
-        label_read: "Read:"
+        label_read: "Lesen:",
+        label_link_speed: "Verbindungsgeschw.:",
+        label_interface: "Schnittstelle",
+        label_type: "Typ",
+        label_ip: "IP-Adresse"
     }
 };
 
