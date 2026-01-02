@@ -356,11 +356,11 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		reporter.Broadcast("Failed to generate report: " + err.Error())
 	} else {
 		reporter.SaveReport(htmlBytes)
-		reporter.Broadcast("Report Ready!")
-
-		// Small delay to ensure all log messages are flushed before result
-		time.Sleep(100 * time.Millisecond)
-		rpt.Completed = true
-		reporter.SendResult(rpt)
 	}
+
+	reporter.Broadcast("Report Ready!")
+	// Small delay to ensure all log messages are flushed before result
+	time.Sleep(100 * time.Millisecond)
+	rpt.Completed = true
+	reporter.SendResult(rpt)
 }

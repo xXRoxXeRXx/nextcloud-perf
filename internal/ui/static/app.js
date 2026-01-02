@@ -14,11 +14,13 @@ function setStage(stage) {
     if (newIndex < currentIndex && currentStage !== '') return; // Don't go backwards
 
     // Mark previous as done
-    if (currentStage) {
-        const prevEl = document.getElementById('stage-' + currentStage);
-        if (prevEl) {
-            prevEl.classList.remove('active');
-            prevEl.classList.add('done');
+    if (newIndex > 0) {
+        for (let i = 0; i < newIndex; i++) {
+            const prevEl = document.getElementById('stage-' + stages[i]);
+            if (prevEl) {
+                prevEl.classList.remove('active');
+                prevEl.classList.add('done');
+            }
         }
     }
 
@@ -113,8 +115,8 @@ function updateQualityDot(id, speed, limit, isLarge) {
         if (ratio > 0.70) quality = 'green';
         else if (ratio > 0.40) quality = 'yellow';
     } else {
-        if (ratio > 0.30) quality = 'green';
-        else if (ratio > 0.15) quality = 'yellow';
+        if (ratio > 0.15) quality = 'green';
+        else if (ratio > 0.07) quality = 'yellow';
     }
     if (dot) dot.className = `quality-indicator quality-${quality}`;
     return quality;
@@ -177,6 +179,15 @@ evtSource.addEventListener("result", function (event) {
         if (data.Completed) {
             document.getElementById('progressCard').style.display = 'none';
             document.getElementById('resultsCard').style.display = 'block';
+
+            // Mark all stages as done
+            stages.forEach(s => {
+                const el = document.getElementById('stage-' + s);
+                if (el) {
+                    el.classList.remove('active');
+                    el.classList.add('done');
+                }
+            });
 
             const header = document.querySelector('#resultsCard > div:first-child');
             header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
