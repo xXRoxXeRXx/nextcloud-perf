@@ -105,6 +105,12 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		rpt.SystemOS = sys.OS
 		rpt.CPU = report.CPUInfo{Model: sys.CPUModel, Usage: sys.CPUUsage}
 		rpt.PeakCPUUsage = sys.CPUUsage
+		rpt.RAM = report.RAMInfo{
+			Total: formatBytes(sys.RAMTotal),
+			Free:  formatBytes(sys.RAMFree),
+			Used:  formatBytes(sys.RAMUsed),
+			Usage: sys.RAMUsage,
+		}
 	}
 	reporter.SendResult(rpt)
 
