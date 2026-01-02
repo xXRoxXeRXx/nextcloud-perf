@@ -153,7 +153,7 @@ evtSource.addEventListener("result", function (event) {
         }
 
         console.log("Benchmark Result received", data);
-        if (data.Completed || data.error) {
+        if (data.completed || data.error) {
             setProgress(100);
         }
 
@@ -161,7 +161,7 @@ evtSource.addEventListener("result", function (event) {
             document.getElementById('progressCard').style.display = 'none';
             document.getElementById('resultsCard').style.display = 'block';
 
-            const header = document.querySelector('#resultsCard > div:first-child');
+            const header = document.getElementById('resultHeader');
             header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
             const failText = translations[currentLang].benchmark_failed || "Benchmark Failed";
             const backText = translations[currentLang].btn_back || "Back to Connection Details";
@@ -176,7 +176,7 @@ evtSource.addEventListener("result", function (event) {
             return;
         }
 
-        if (data.Completed) {
+        if (data.completed) {
             document.getElementById('progressCard').style.display = 'none';
             document.getElementById('resultsCard').style.display = 'block';
 
@@ -189,98 +189,120 @@ evtSource.addEventListener("result", function (event) {
                 }
             });
 
-            const header = document.querySelector('#resultsCard > div:first-child');
+            const header = document.getElementById('resultHeader');
             header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
             const successText = translations[currentLang].benchmark_completed;
             header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + successText + '</h2>';
         }
 
-        // Populate results
-        document.getElementById('resSmall').innerText = (data.SmallFiles && data.SmallFiles.speed_mbps > 0) ? (data.SmallFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
-        document.getElementById('resMedium').innerText = (data.MediumFiles && data.MediumFiles.speed_mbps > 0) ? (data.MediumFiles.speed_mbps.toFixed(2) + " MB/s") : "--";
-        document.getElementById('resLarge').innerText = (data.LargeFile && data.LargeFile.speed_mbps > 0) ? (data.LargeFile.speed_mbps.toFixed(2) + " MB/s") : "--";
-        document.getElementById('resSmallDown').innerText = (data.SmallFilesDown && data.SmallFilesDown.speed_mbps > 0) ? (data.SmallFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
-        document.getElementById('resMediumDown').innerText = (data.MediumFilesDown && data.MediumFilesDown.speed_mbps > 0) ? (data.MediumFilesDown.speed_mbps.toFixed(2) + " MB/s") : "--";
-        document.getElementById('resLargeDown').innerText = (data.LargeFileDown && data.LargeFileDown.speed_mbps > 0) ? (data.LargeFileDown.speed_mbps.toFixed(2) + " MB/s") : "--";
+        // Populate results (Transfer Speeds)
+        if (data.small_files) {
+            document.getElementById('resSmall').innerText = (data.small_files.speed_mbps > 0) ? (data.small_files.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.small_files.duration > 0) document.getElementById('durSmallUp').innerText = (data.small_files.duration / 1000000000).toFixed(1) + "s";
+        }
+        if (data.small_files_down) {
+            document.getElementById('resSmallDown').innerText = (data.small_files_down.speed_mbps > 0) ? (data.small_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.small_files_down.duration > 0) document.getElementById('durSmallDown').innerText = (data.small_files_down.duration / 1000000000).toFixed(1) + "s";
+        }
+        if (data.medium_files) {
+            document.getElementById('resMedium').innerText = (data.medium_files.speed_mbps > 0) ? (data.medium_files.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.medium_files.duration > 0) document.getElementById('durMedUp').innerText = (data.medium_files.duration / 1000000000).toFixed(1) + "s";
+        }
+        if (data.medium_files_down) {
+            document.getElementById('resMediumDown').innerText = (data.medium_files_down.speed_mbps > 0) ? (data.medium_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.medium_files_down.duration > 0) document.getElementById('durMedDown').innerText = (data.medium_files_down.duration / 1000000000).toFixed(1) + "s";
+        }
+        if (data.large_file) {
+            document.getElementById('resLarge').innerText = (data.large_file.speed_mbps > 0) ? (data.large_file.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.large_file.duration > 0) document.getElementById('durLargeUp').innerText = (data.large_file.duration / 1000000000).toFixed(1) + "s";
+        }
+        if (data.large_file_down) {
+            document.getElementById('resLargeDown').innerText = (data.large_file_down.speed_mbps > 0) ? (data.large_file_down.speed_mbps.toFixed(2) + " MB/s") : "--";
+            if (data.large_file_down.duration > 0) document.getElementById('durLargeDown').innerText = (data.large_file_down.duration / 1000000000).toFixed(1) + "s";
+        }
 
-        if (data.PingStats) {
-            document.getElementById('resPing').innerText = data.PingStats.avg_ms.toFixed(2) + ' ms';
-            document.getElementById('resPacketLoss').innerText = data.PingStats.packet_loss.toFixed(1) + '%';
+        // Network Stats
+        if (data.ping_stats) {
+            const p = data.ping_stats;
+            document.getElementById('resPing').innerText = p.avg_ms.toFixed(2) + ' ms';
+            document.getElementById('resPacketLoss').innerText = p.packet_loss.toFixed(1) + '%';
 
             let pingQ = 'green';
-            if (data.PingStats.avg_ms > 60) pingQ = 'red';
-            else if (data.PingStats.avg_ms > 25) pingQ = 'yellow';
+            if (p.avg_ms > 60) pingQ = 'red';
+            else if (p.avg_ms > 25) pingQ = 'yellow';
             document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
 
             let lossQ = 'green';
-            if (data.PingStats.packet_loss > 1) lossQ = 'red';
-            else if (data.PingStats.packet_loss > 0) lossQ = 'yellow';
+            if (p.packet_loss > 1) lossQ = 'red';
+            else if (p.packet_loss > 0) lossQ = 'yellow';
             document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
 
-            // Render Ping Table
+            // Render Ping Table if provided
             const tbody = document.getElementById('pingTableBody');
-            if (tbody) {
+            if (tbody && p.results) {
                 tbody.innerHTML = '';
-                if (data.PingStats.results) {
-                    data.PingStats.results.forEach(r => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `<td>${r.Seq}</td>
-                                     <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
-                                     <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
-                        tbody.appendChild(row);
-                    });
-                }
+                p.results.forEach(r => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${r.Seq}</td>
+                                 <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
+                                 <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
+                    tbody.appendChild(row);
+                });
             }
 
-            document.getElementById('pingCount').innerText = data.PingStats.count;
-            document.getElementById('pingAvg').innerText = data.PingStats.avg_ms.toFixed(2) + " ms";
-            document.getElementById('pingMin').innerText = data.PingStats.min_ms.toFixed(2);
-            document.getElementById('pingMax').innerText = data.PingStats.max_ms.toFixed(2);
-            document.getElementById('pingLoss').innerText = data.PingStats.packet_loss.toFixed(1) + "%";
+            document.getElementById('pingCount').innerText = p.count || "--";
+            document.getElementById('pingAvg').innerText = p.avg_ms.toFixed(2) + " ms";
+            document.getElementById('pingMin').innerText = p.min_ms.toFixed(2);
+            document.getElementById('pingMax').innerText = p.max_ms.toFixed(2);
+            document.getElementById('pingLoss').innerText = p.packet_loss.toFixed(1) + "%";
         }
 
-        if (data.DNS) {
-            if (data.DNS.resolution_time > 0) {
-                document.getElementById('resDNS').innerText = data.DNS.resolution_time.toFixed(1) + " ms";
+        if (data.dns) {
+            const d = data.dns;
+            if (d.resolution_time > 0) {
+                document.getElementById('resDNS').innerText = d.resolution_time.toFixed(1) + " ms";
                 const dnsTimeEl = document.getElementById('dnsTime');
-                if (dnsTimeEl) dnsTimeEl.innerText = data.DNS.resolution_time.toFixed(2) + " ms";
+                if (dnsTimeEl) dnsTimeEl.innerText = d.resolution_time.toFixed(2) + " ms";
                 const ipsDiv = document.getElementById('dnsIPs');
-                if (ipsDiv) {
+                if (ipsDiv && d.resolved_ips) {
                     ipsDiv.innerHTML = '';
-                    if (data.DNS.resolved_ips) {
-                        data.DNS.resolved_ips.forEach(ip => {
-                            const d = document.createElement('div');
-                            d.innerText = "- " + ip;
-                            ipsDiv.appendChild(d);
-                        });
-                    }
+                    d.resolved_ips.forEach(ip => {
+                        const div = document.createElement('div');
+                        div.innerText = "- " + ip;
+                        ipsDiv.appendChild(div);
+                    });
                 }
             }
         }
 
         if (data.advanced_net) {
+            const a = data.advanced_net;
             document.getElementById('advNetStats').style.display = 'block';
-            document.getElementById('valSSL').innerText = data.advanced_net.tls_handshake_ms.toFixed(1) + " ms";
-            document.getElementById('valMTU').innerText = data.advanced_net.mtu ? data.advanced_net.mtu + " B" : "Unknown";
+            document.getElementById('valSSL').innerText = a.tls_handshake_ms.toFixed(1) + " ms";
+            document.getElementById('valMTU').innerText = a.mtu ? a.mtu + " B" : "Unknown";
             const vpnEl = document.getElementById('valVPN');
-            if (data.advanced_net.vpn_detected) {
-                vpnEl.innerText = "VPN: " + data.advanced_net.vpn_type;
-                if (data.advanced_net.proxy_detected) vpnEl.innerText += " (Proxy)";
-            } else if (data.advanced_net.proxy_detected) {
+            if (a.vpn_detected) {
+                vpnEl.innerText = "VPN: " + (a.vpn_type || "Detected");
+                if (a.proxy_detected) vpnEl.innerText += " (Proxy)";
+            } else if (a.proxy_detected) {
                 vpnEl.innerText = "Proxy Detected";
             } else {
                 vpnEl.innerText = "";
             }
         }
 
-        if (data.SystemOS) {
-            document.getElementById('sysOS').innerText = data.SystemOS;
-            document.getElementById('sysCPU').innerText = data.CPU.Model;
-            document.getElementById('sysCPUUsage').innerText = data.CPU.Usage.toFixed(1) + "%";
-            document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
-            document.getElementById('sysRAMTotal').innerText = data.RAM.Total;
-            document.getElementById('sysRAMUsed').innerText = data.RAM.Used + " (" + data.RAM.Usage.toFixed(1) + "%)";
-            document.getElementById('sysRAMFree').innerText = data.RAM.Free;
+        // System & Cloud Info
+        if (data.system_os) document.getElementById('sysOS').innerText = data.system_os;
+        if (data.cpu) {
+            document.getElementById('sysCPU').innerText = data.cpu.Model;
+            document.getElementById('sysCPUUsage').innerText = data.cpu.Usage.toFixed(1) + "%";
+        }
+        if (data.peak_cpu_usage !== undefined) document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
+
+        if (data.ram) {
+            document.getElementById('sysRAMTotal').innerText = data.ram.Total;
+            document.getElementById('sysRAMUsed').innerText = data.ram.Used + " (" + data.ram.Usage.toFixed(1) + "%)";
+            document.getElementById('sysRAMFree').innerText = data.ram.Free;
         }
 
         if (data.disk_io) {
@@ -288,52 +310,80 @@ evtSource.addEventListener("result", function (event) {
             document.getElementById('diskRead').innerText = data.disk_io.read_mbps.toFixed(1) + " MB/s";
         }
 
-        if (data.LocalNetwork) {
-            document.getElementById('netConnType').innerText = data.LocalNetwork.ConnectionType;
-            document.getElementById('netPrimaryIF').innerText = data.LocalNetwork.PrimaryIF;
+        if (data.local_network) {
+            const ln = data.local_network;
+            document.getElementById('netConnType').innerText = ln.ConnectionType || "--";
+            document.getElementById('netPrimaryIF').innerText = ln.PrimaryIF || "--";
+
+            // Populate IP if available
+            if (ln.Interfaces && ln.Interfaces.length > 0) {
+                const primary = ln.Interfaces.find(i => i.Name === ln.PrimaryIF) || ln.Interfaces[0];
+                document.getElementById('sysIP').innerText = primary.IPAddress;
+            }
         }
 
-        if (data.Traceroute) {
+        if (data.cloud_check) {
+            const cc = data.cloud_check;
+            const ncStatusEl = document.getElementById('ncStatus');
+            if (cc.status) {
+                ncStatusEl.style.display = 'block';
+                let statusText = `${cc.status} ${cc.version}`;
+                if (cc.edition) statusText += ` (${cc.edition})`;
+                if (cc.maintenance) statusText += ` [MAINTENANCE MODE]`;
+                ncStatusEl.innerText = statusText;
+                if (cc.maintenance) ncStatusEl.style.background = '#fff5f5';
+            }
+        }
+
+        if (data.traceroute) {
             const trBox = document.getElementById('tracerouteBox');
             if (trBox) {
                 trBox.innerHTML = '';
-                data.Traceroute.forEach(line => {
-                    const d = document.createElement('div');
-                    d.innerText = line;
-                    trBox.appendChild(d);
+                data.traceroute.forEach(line => {
+                    const div = document.createElement('div');
+                    div.innerText = line;
+                    trBox.appendChild(div);
                 });
             }
         }
 
-        if (data.Speedtest) {
-            if (data.Speedtest.error) {
+        // Reference Speedtest logic
+        if (data.speedtest) {
+            const s = data.speedtest;
+            if (s.error) {
                 document.getElementById('refDown').innerText = "Error";
                 document.getElementById('refUp').innerText = "Error";
             } else {
-                const uMbps = data.Speedtest.upload_speed || 0;
-                const dMbps = data.Speedtest.download_speed || 0;
-                const uMBps = data.Speedtest.upload_mbps || 0;
-                const dMBps = data.Speedtest.download_mbps || 0;
+                const uMbps = s.upload_speed || 0;
+                const dMbps = s.download_speed || 0;
+                const uMBps = s.upload_mbps || 0;
+                const dMBps = s.download_mbps || 0;
                 document.getElementById('refUp').innerText = `${uMBps.toFixed(2)} MB/s (${uMbps.toFixed(2)} Mbps)`;
                 document.getElementById('refDown').innerText = `${dMBps.toFixed(2)} MB/s (${dMbps.toFixed(2)} Mbps)`;
 
                 const limitUp = Math.min(uMBps, 10);
                 const limitDown = Math.min(dMBps, 50);
 
-                const qSUp = updateQualityDot('qSmallUp', data.SmallFiles.speed_mbps, limitUp, false);
-                const qSDown = updateQualityDot('qSmallDown', data.SmallFilesDown.speed_mbps, limitDown, false);
-                updateConclusion('concSmall', qSUp, qSDown);
+                if (data.small_files && data.small_files_down) {
+                    const qSUp = updateQualityDot('qSmallUp', data.small_files.speed_mbps, limitUp, false);
+                    const qSDown = updateQualityDot('qSmallDown', data.small_files_down.speed_mbps, limitDown, false);
+                    updateConclusion('concSmall', qSUp, qSDown);
+                }
 
-                const qMUp = updateQualityDot('qMedUp', data.MediumFiles.speed_mbps, limitUp, false);
-                const qMDown = updateQualityDot('qMedDown', data.MediumFilesDown.speed_mbps, limitDown, false);
-                updateConclusion('concMed', qMUp, qMDown);
+                if (data.medium_files && data.medium_files_down) {
+                    const qMUp = updateQualityDot('qMedUp', data.medium_files.speed_mbps, limitUp, false);
+                    const qMDown = updateQualityDot('qMedDown', data.medium_files_down.speed_mbps, limitDown, false);
+                    updateConclusion('concMed', qMUp, qMDown);
+                }
 
-                const qLUp = updateQualityDot('qLargeUp', data.LargeFile.speed_mbps, limitUp, true);
-                const qLDown = updateQualityDot('qLargeDown', data.LargeFileDown.speed_mbps, limitDown, true);
-                updateConclusion('concLarge', qLUp, qLDown);
+                if (data.large_file && data.large_file_down) {
+                    const qLUp = updateQualityDot('qLargeUp', data.large_file.speed_mbps, limitUp, true);
+                    const qLDown = updateQualityDot('qLargeDown', data.large_file_down.speed_mbps, limitDown, true);
+                    updateConclusion('concLarge', qLUp, qLDown);
+                }
 
-                if (data.Speedtest.isp) document.getElementById('resProvider').innerText = data.Speedtest.isp;
-                if (data.Speedtest.server_name) document.getElementById('resStServer').innerText = data.Speedtest.server_name;
+                if (s.isp) document.getElementById('resProvider').innerText = s.isp;
+                if (s.server_name) document.getElementById('resStServer').innerText = s.server_name;
             }
         }
     } catch (err) {

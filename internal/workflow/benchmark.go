@@ -85,6 +85,7 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 		Status:      status.ProductName,
 		Version:     status.VersionString,
 		Maintenance: status.Maintenance,
+		Edition:     status.Edition,
 	}
 	if status.Maintenance {
 		reporter.Broadcast("Warning: Server is in maintenance mode!")
@@ -103,34 +104,31 @@ func Run(ctx context.Context, opts BenchmarkOptions, reporter Reporter) {
 	} else {
 		rpt.SystemOS = sys.OS
 		rpt.CPU = report.CPUInfo{Model: sys.CPUModel, Usage: sys.CPUUsage}
-		rpt.RAM = report.RAMInfo{
-			Total: formatBytes(sys.RAMTotal),
-			Free:  formatBytes(sys.RAMFree),
-			Used:  formatBytes(sys.RAMUsed),
-			Usage: sys.RAMUsage,
-		}
-		reporter.Broadcast(fmt.Sprintf("System: %s | CPU: %.1f%% | RAM: %.1f%% used", sys.OS, sys.CPUUsage, sys.RAMUsage))
-
-		// Run Disk Benchmark
-		reporter.Broadcast("Running Local Disk I/O Benchmark...")
-		disk, errDisk := system.RunDiskBenchmark()
-		if errDisk == nil {
-			rpt.DiskIO = report.DiskResult{WriteMBps: disk.WriteMBps, ReadMBps: disk.ReadMBps}
-			reporter.Broadcast(fmt.Sprintf("Disk Speed: Write=%.1f MB/s | Read=%.1f MB/s", disk.WriteMBps, disk.ReadMBps))
-		}
-
-		reporter.SendResult(rpt)
+		rpt.PeakCPUUsage = sys.CPUUsage
 	}
+	reporter.SendResult(rpt)
+
+	// DISK I/O
+	reporter.Broadcast("Measuring Local Disk I/O (this may take a few seconds)...")
+	disk, errDisk := system.RunDiskBenchmark()
+	if errDisk == nil {
+		rpt.DiskIO = report.DiskResult{WriteMBps: disk.WriteMBps, ReadMBps: disk.ReadMBps}
+		reporter.Broadcast(fmt.Sprintf("Disk Speed: Write=%.1f MB/s | Read=%.1f MB/s", disk.WriteMBps, disk.ReadMBps))
+	} else {
+		reporter.Broadcast(fmt.Sprintf("Warning: Could not run disk benchmark: %v", errDisk))
+	}
+	reporter.SendResult(rpt)
 
 	// 1b. LOCAL NETWORK INFO
-	reporter.Broadcast("Detecting Local Network...")
-	localNet := network.GetLocalNetworkInfo()
-	rpt.LocalNetwork = localNet
-	if localNet.PrimaryIF != "" {
-		reporter.Broadcast(fmt.Sprintf("Network: %s (%s)", localNet.ConnectionType, localNet.PrimaryIF))
+	reporter.Broadcast("Detecting Local Network Info...")
+	locNet := network.GetLocalNetworkInfo()
+	rpt.LocalNetwork = locNet
+	if locNet.PrimaryIF != "" {
+		reporter.Broadcast(fmt.Sprintf("Network: %s (%s)", locNet.ConnectionType, locNet.PrimaryIF))
 	} else {
 		reporter.Broadcast("Network: Could not detect local network")
 	}
+	reporter.SendResult(rpt)
 
 	// 1c. REFERENCE SPEEDTEST
 	reporter.Broadcast("Running Reference Speedtest (Speedtest.net)...")

@@ -86,7 +86,7 @@
 
         <!-- Results Card -->
         <div class="card" id="resultsCard" style="display: none;">
-            <div
+            <div id="resultHeader"
                 style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
                 <i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
                 <h2 style="margin: 0;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
@@ -104,6 +104,9 @@
                     <div style="font-size: 0.9em;" id="sysCPU">--</div>
                     <div style="font-size: 0.9em;"><span data-i18n="label_cpu_usage">CPU Usage:</span> <span
                             id="sysCPUUsage">--</span> (Peak: <span id="sysCPUPeak">--</span>)</div>
+                    <div id="ncStatus"
+                        style="margin-top: 10px; font-size: 0.85em; background: #e8f4fd; padding: 10px; border-radius: 5px; color: #003d8f; font-weight: bold; display: none;">
+                    </div>
                 </div>
                 <div class="card" style="padding: 15px;">
                     <div style="font-size: 0.8em; color: gray;" data-i18n="label_disk_io">Client Disk I/O</div>
@@ -121,6 +124,8 @@
                     <div style="font-weight: bold; font-size: 1.1em;" id="netConnType">--</div>
                     <div style="margin-top:5px;"><span data-i18n="label_primary_if">Primary Interface:</span> <span
                             id="netPrimaryIF">--</span></div>
+                    <div style="font-size: 0.85em; color: gray;" id="netIPSection">IP: <span id="sysIP"
+                            style="font-weight: bold; color: #333;">--</span></div>
                     <div id="advNetStats"
                         style="margin-top:10px; font-size: 0.85em; background: #f8f9fa; padding: 10px; border-radius: 5px; display: none;">
                         <div>SSL Handshake: <span id="valSSL">--</span></div>
@@ -171,11 +176,13 @@
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
+                        <span id="durSmallUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qSmallUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
+                        <span id="durSmallDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qSmallDown"></span>
                     </div>
                     <div class="conclusion-text" id="concSmall"></div>
@@ -188,11 +195,13 @@
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
+                        <span id="durMedUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qMedUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
+                        <span id="durMedDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qMedDown"></span>
                     </div>
                     <div class="conclusion-text" id="concMed"></div>
@@ -205,11 +214,13 @@
                     <div style="margin-top: 10px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
+                        <span id="durLargeUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qLargeUp"></span>
                     </div>
                     <div style="margin-top: 5px;">
                         <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
                         <span style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
+                        <span id="durLargeDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
                         <span class="quality-indicator quality-none" id="qLargeDown"></span>
                     </div>
                     <div class="conclusion-text" id="concLarge"></div>
@@ -310,4 +321,5 @@
     <script src="/static/i18n.js"></script>
     <script src="/static/app.js"></script>
 </body>
+
 </html>

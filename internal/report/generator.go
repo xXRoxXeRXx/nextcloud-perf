@@ -38,35 +38,36 @@ type CloudStatus struct {
 	Status      string `json:"status"`
 	Version     string `json:"version"`
 	Maintenance bool   `json:"maintenance"`
+	Edition     string `json:"edition"`
 }
 
 type ReportData struct {
-	GeneratedAt time.Time
-	TargetURL   string
-	ServerVer   string
-	SystemOS    string
-	CPU         CPUInfo
-	RAM         RAMInfo
-	Completed   bool // Signals if the benchmark is fully finished
+	GeneratedAt time.Time `json:"generated_at"`
+	TargetURL   string    `json:"target_url"`
+	ServerVer   string    `json:"server_ver"`
+	SystemOS    string    `json:"system_os"`
+	CPU         CPUInfo   `json:"cpu"`
+	RAM         RAMInfo   `json:"ram"`
+	Completed   bool      `json:"completed"`
 
-	LocalNetwork network.LocalNetworkInfo
-	PingStats    network.DetailedPingStats
-	DNS          network.DNSResult
-	Traceroute   []string
+	LocalNetwork network.LocalNetworkInfo  `json:"local_network"`
+	PingStats    network.DetailedPingStats `json:"ping_stats"`
+	DNS          network.DNSResult         `json:"dns"`
+	Traceroute   []string                  `json:"traceroute"`
 
 	AdvancedNet  AdvancedNetworkInfo `json:"advanced_net"`
 	DiskIO       DiskResult          `json:"disk_io"`
 	CloudCheck   CloudStatus         `json:"cloud_check"`
 	PeakCPUUsage float64             `json:"peak_cpu_usage"`
 
-	SmallFiles      SpeedResult
-	SmallFilesDown  SpeedResult
-	MediumFiles     SpeedResult
-	MediumFilesDown SpeedResult
-	LargeFile       SpeedResult
-	LargeFileDown   SpeedResult
-	Speedtest       *network.SpeedtestResult `json:"Speedtest,omitempty"`
-	Error           string                   `json:"error,omitempty"` // Global error message if benchmark failed
+	SmallFiles      SpeedResult              `json:"small_files"`
+	SmallFilesDown  SpeedResult              `json:"small_files_down"`
+	MediumFiles     SpeedResult              `json:"medium_files"`
+	MediumFilesDown SpeedResult              `json:"medium_files_down"`
+	LargeFile       SpeedResult              `json:"large_file"`
+	LargeFileDown   SpeedResult              `json:"large_file_down"`
+	Speedtest       *network.SpeedtestResult `json:"speedtest,omitempty"`
+	Error           string                   `json:"error,omitempty"`
 }
 
 type SpeedResult struct {
