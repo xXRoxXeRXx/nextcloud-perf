@@ -5,13 +5,21 @@ const currentStatus = document.getElementById("currentStatus");
 
 let currentStage = '';
 
+const stages = ['system', 'network', 'connect', 'benchmark', 'report'];
 function setStage(stage) {
     if (currentStage === stage) return;
 
+    const currentIndex = stages.indexOf(currentStage);
+    const newIndex = stages.indexOf(stage);
+    if (newIndex < currentIndex && currentStage !== '') return; // Don't go backwards
+
     // Mark previous as done
     if (currentStage) {
-        document.getElementById('stage-' + currentStage).classList.remove('active');
-        document.getElementById('stage-' + currentStage).classList.add('done');
+        const prevEl = document.getElementById('stage-' + currentStage);
+        if (prevEl) {
+            prevEl.classList.remove('active');
+            prevEl.classList.add('done');
+        }
     }
 
     currentStage = stage;
@@ -62,7 +70,7 @@ evtSource.addEventListener("message", function (event) {
         if (msg.includes("Speedtest:")) setProgress(15);
         if (msg.includes("Ref Speed")) setProgress(18);
     }
-    if (msg.includes("Small Files") || msg.includes("Medium Files") || msg.includes("Large File") || msg.includes("chunk")) {
+    if (msg.includes("Starting Small Files Test") || msg.includes("Medium Files") || msg.includes("Large File") || msg.includes("chunk")) {
         setStage('benchmark');
         if (msg.includes("Starting Small Files Test")) setProgress(52);
         if (msg.includes("Small Files Upload")) setProgress(55);
@@ -84,11 +92,12 @@ evtSource.addEventListener("message", function (event) {
         if (msg.includes("Starting Large File Download")) setProgress(85);
         if (msg.includes("Large File Download")) setProgress(90);
     }
+
     if (msg.includes("Cleanup") || msg.includes("Generating Report") || msg.includes("Report Ready")) {
         setStage('report');
         if (msg.includes("Cleanup")) setProgress(92);
         if (msg.includes("Generating")) setProgress(95);
-        if (msg.includes("Ready")) setProgress(98);
+        if (msg.includes("Report Ready")) setProgress(98);
     }
 });
 
@@ -104,8 +113,8 @@ function updateQualityDot(id, speed, limit, isLarge) {
         if (ratio > 0.70) quality = 'green';
         else if (ratio > 0.40) quality = 'yellow';
     } else {
-        if (ratio > 0.40) quality = 'green';
-        else if (ratio > 0.20) quality = 'yellow';
+        if (ratio > 0.30) quality = 'green';
+        else if (ratio > 0.15) quality = 'yellow';
     }
     if (dot) dot.className = `quality-indicator quality-${quality}`;
     return quality;
@@ -142,7 +151,9 @@ evtSource.addEventListener("result", function (event) {
         }
 
         console.log("Benchmark Result received", data);
-        setProgress(100);
+        if (data.Completed || data.error) {
+            setProgress(100);
+        }
 
         if (data.error) {
             document.getElementById('progressCard').style.display = 'none';

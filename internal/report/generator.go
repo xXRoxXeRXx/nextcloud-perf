@@ -110,10 +110,10 @@ func (s SpeedResult) GetQualityColor(limitMBps float64, isLarge bool) string {
 			return "#f1c40f"
 		} // Yellow
 	} else {
-		if ratio > 0.40 {
+		if ratio > 0.30 {
 			return "#2ecc71"
 		} // Green
-		if ratio > 0.20 {
+		if ratio > 0.15 {
 			return "#f1c40f"
 		} // Yellow
 	}
