@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"os"
-	"path/filepath"
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
@@ -76,7 +75,12 @@ func GetSystemInfo() (*SystemInfo, error) {
 }
 
 func RunDiskBenchmark() (DiskResult, error) {
-	tempFile := filepath.Join(os.TempDir(), "nc_perf_disk_test.dat")
+	// Use os.CreateTemp for secure temp file creation
+	f, err := os.CreateTemp(os.TempDir(), "nc_perf_disk_test-*.dat")
+	if err != nil {
+		return DiskResult{}, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	tempFile := f.Name()
 	defer os.Remove(tempFile)
 
 	data := make([]byte, 10*1024*1024) // 10MB
@@ -86,10 +90,6 @@ func RunDiskBenchmark() (DiskResult, error) {
 
 	// Write Test
 	start := time.Now()
-	f, err := os.Create(tempFile)
-	if err != nil {
-		return DiskResult{}, err
-	}
 	_, err = f.Write(data)
 	if err != nil {
 		f.Close()

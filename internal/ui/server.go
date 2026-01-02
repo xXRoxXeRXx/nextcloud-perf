@@ -5,12 +5,16 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
+	"time"
 
 	"nextcloud-perf/internal/report"
 	"nextcloud-perf/internal/workflow"
@@ -30,6 +34,13 @@ func init() {
 	}
 }
 
+// Client represents an SSE client connection
+type Client struct {
+	id      string
+	msgChan chan string
+	resChan chan report.ReportData
+}
+
 type Server struct {
 	Port         int
 	LogChan      chan string
@@ -39,14 +50,73 @@ type Server struct {
 	ReadyChan    chan struct{} // Signals when server is ready to accept connections
 	cancelFunc   context.CancelFunc
 	runMu        sync.Mutex
+	
+	// Client management for broadcasting
+	clients    map[string]*Client
+	clientsMu  sync.RWMutex
+	register   chan *Client
+	unregister chan *Client
 }
 
 func NewServer(port int) *Server {
-	return &Server{
+	s := &Server{
 		Port:       port,
 		LogChan:    make(chan string, 100),
 		ResultChan: make(chan report.ReportData, 1),
 		ReadyChan:  make(chan struct{}),
+		clients:    make(map[string]*Client),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+	}
+	
+	// Start broadcaster goroutine
+	go s.broadcaster()
+	
+	return s
+}
+
+// broadcaster handles message distribution to all connected clients
+func (s *Server) broadcaster() {
+	for {
+		select {
+		case msg := <-s.LogChan:
+			s.clientsMu.RLock()
+			for _, client := range s.clients {
+				select {
+				case client.msgChan <- msg:
+				default:
+					// Skip if client buffer is full (slow client)
+				}
+			}
+			s.clientsMu.RUnlock()
+			
+		case res := <-s.ResultChan:
+			s.clientsMu.RLock()
+			for _, client := range s.clients {
+				select {
+				case client.resChan <- res:
+				default:
+					// Skip if client buffer is full
+				}
+			}
+			s.clientsMu.RUnlock()
+			
+		case c := <-s.register:
+			s.clientsMu.Lock()
+			s.clients[c.id] = c
+			s.clientsMu.Unlock()
+			log.Printf("Client %s connected (total: %d)", c.id, len(s.clients))
+			
+		case c := <-s.unregister:
+			s.clientsMu.Lock()
+			if _, ok := s.clients[c.id]; ok {
+				close(c.msgChan)
+				close(c.resChan)
+				delete(s.clients, c.id)
+				log.Printf("Client %s disconnected (total: %d)", c.id, len(s.clients))
+			}
+			s.clientsMu.Unlock()
+		}
 	}
 }
 
@@ -82,15 +152,50 @@ func (s *Server) HandleEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Keep connection open until client disconnects
+	// Create unique client
+	clientID := fmt.Sprintf("client-%d", time.Now().UnixNano())
+	client := &Client{
+		id:      clientID,
+		msgChan: make(chan string, 10),
+		resChan: make(chan report.ReportData, 1),
+	}
+	
+	// Register client
+	s.register <- client
+	defer func() {
+		s.unregister <- client
+	}()
+	
 	ctx := r.Context()
+	
+	// Heartbeat ticker to keep connection alive
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			// Client disconnected
 			return
-		case res := <-s.ResultChan:
-			// Priority: Send result first
+			
+		case <-ticker.C:
+			// Send heartbeat comment
+			fmt.Fprintf(w, ": heartbeat\n\n")
+			flusher.Flush()
+			
+		case msg, ok := <-client.msgChan:
+			if !ok {
+				// Channel closed
+				return
+			}
+			fmt.Fprintf(w, "data: %s\n\n", msg)
+			flusher.Flush()
+			
+		case res, ok := <-client.resChan:
+			if !ok {
+				// Channel closed
+				return
+			}
 			b, err := json.Marshal(res)
 			if err != nil {
 				fmt.Fprintf(w, "data: JSON Marshal Error: %v\n\n", err)
@@ -98,10 +203,6 @@ func (s *Server) HandleEvents(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			fmt.Fprintf(w, "event: result\ndata: %s\n\n", string(b))
-			flusher.Flush()
-			// Don't return - keep connection for potential future results
-		case msg := <-s.LogChan:
-			fmt.Fprintf(w, "data: %s\n\n", msg)
 			flusher.Flush()
 		}
 	}
@@ -128,9 +229,67 @@ type RunRequest struct {
 	Pass string `json:"pass"`
 }
 
+// Validate performs input validation to prevent SSRF and injection attacks
+func (r *RunRequest) Validate() error {
+	// URL validation
+	if r.URL == "" {
+		return errors.New("URL is required")
+	}
+	
+	parsedURL, err := url.Parse(r.URL)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %w", err)
+	}
+	
+	// Only allow HTTP(S) protocols
+	if parsedURL.Scheme != "https" && parsedURL.Scheme != "http" {
+		return errors.New("only HTTP(S) URLs are allowed")
+	}
+	
+	// Warn about private IPs (SSRF protection)
+	hostname := parsedURL.Hostname()
+	if hostname == "localhost" || 
+	   hostname == "127.0.0.1" ||
+	   strings.HasPrefix(hostname, "192.168.") ||
+	   strings.HasPrefix(hostname, "10.") ||
+	   strings.HasPrefix(hostname, "172.16.") ||
+	   strings.HasPrefix(hostname, "172.17.") ||
+	   strings.HasPrefix(hostname, "172.18.") ||
+	   strings.HasPrefix(hostname, "172.19.") ||
+	   strings.HasPrefix(hostname, "172.2") ||
+	   strings.HasPrefix(hostname, "172.30.") ||
+	   strings.HasPrefix(hostname, "172.31.") {
+		log.Printf("Warning: Testing against private IP address: %s", hostname)
+	}
+	
+	// Username validation
+	if r.User == "" {
+		return errors.New("username is required")
+	}
+	if len(r.User) > 255 {
+		return errors.New("username too long (max 255 chars)")
+	}
+	
+	// Password validation
+	if r.Pass == "" {
+		return errors.New("password is required")
+	}
+	if len(r.Pass) > 1024 {
+		return errors.New("password too long (max 1024 chars)")
+	}
+	
+	return nil
+}
+
 func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 	var req RunRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	// Validate input
+	if err := req.Validate(); err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
@@ -144,9 +303,12 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancelFunc = cancel
-	s.runMu.Unlock()
-
+	
+	// Synchronization channel to ensure goroutine has started before unlock
+	started := make(chan struct{})
+	
 	go func() {
+		close(started) // Signal that goroutine has started
 		defer func() {
 			s.runMu.Lock()
 			s.cancelFunc = nil
@@ -160,6 +322,10 @@ func (s *Server) HandleRun(w http.ResponseWriter, r *http.Request) {
 		}
 		workflow.Run(ctx, opts, s)
 	}()
+	
+	<-started // Wait for goroutine to start
+	s.runMu.Unlock()
+	
 	w.WriteHeader(http.StatusOK)
 }
 
