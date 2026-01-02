@@ -235,72 +235,149 @@ select:focus {
     max-width: 1000px;
 }
 
-.log-output {
-    background: #1e1e1e;
-    color: #00ff00;
-    padding: 20px;
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 15px;
-    font-size: 0.85em;
+#progressCard {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
+/* Stepper UI */
 .progress-stages {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 10px 0;
+    margin-bottom: 40px;
+    padding: 20px 0;
+    position: relative;
+}
+
+.progress-stages::before {
+    content: '';
+    position: absolute;
+    top: 35px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: #e0e0e0;
+    z-index: 1;
 }
 
 .stage {
     flex: 1;
     text-align: center;
-    padding: 10px;
-    background: #f0f0f0;
-    margin: 0 5px;
-    border-radius: 8px;
-    transition: all 0.3s;
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    margin: 0;
+    padding: 0;
     font-size: 0.85em;
+    color: var(--text-tertiary);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.stage.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    transform: scale(1.05);
+.stage-icon {
+    width: 36px;
+    height: 36px;
+    background: white;
+    border: 3px solid #e0e0e0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.1em;
+    transition: all 0.4s;
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
 }
 
-.stage.done {
+.stage.active .stage-icon {
+    border-color: #667eea;
+    color: #667eea;
+    transform: scale(1.2);
+    background: white;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.stage.done .stage-icon {
+    border-color: #2ecc71;
     background: #2ecc71;
     color: white;
 }
 
-.stage i {
-    font-size: 1.5em;
+.stage span {
+    font-weight: 600;
+}
+
+.stage.active {
+    color: #003d8f;
+}
+
+.stage.done {
+    color: #2ecc71;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(102, 126, 234, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+    }
+}
+
+/* Large HUD Percentage */
+.percentage-display {
+    text-align: center;
+    margin: 30px 0;
+}
+
+#progressPercentage {
+    font-size: 4em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #003d8f 0%, #001b41 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
     display: block;
-    margin-bottom: 5px;
+}
+
+.percentage-label {
+    font-size: 0.9em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .current-status {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    font-size: 1.1em;
-    margin-bottom: 15px;
+    background: #f8f9ff;
+    border: 1px solid #e0e7ff;
+    color: #003d8f;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-size: 1em;
+    margin-bottom: 25px;
     display: flex;
     align-items: center;
     gap: 15px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .current-status .spinner {
-    width: 24px;
-    height: 24px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #e0e7ff;
+    border-top-color: #003d8f;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
     flex-shrink: 0;
 }
 
@@ -311,23 +388,32 @@ select:focus {
 }
 
 .progress-bar {
-    height: 25px;
-    border-radius: 12px;
-    background: #e0e0e0;
+    height: 12px;
+    border-radius: 6px;
+    background: #f0f0f0;
     margin: 15px 0;
     overflow: hidden;
+    position: relative;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    transition: width 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 0.9em;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%, #667eea 200%);
+    background-size: 200% 100%;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: shimmer 2s linear infinite;
+    border-radius: 6px;
+    width: 0;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
 }
 
 .fail-dot {

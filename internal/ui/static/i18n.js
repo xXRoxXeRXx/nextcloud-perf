@@ -65,7 +65,8 @@ const translations = {
         label_link_speed: "Link Speed:",
         label_interface: "Interface",
         label_type: "Type",
-        label_ip: "IP Address"
+        label_ip: "IP Address",
+        summary_view_logs: "View Technical Logs"
     },
     de: {
         title: "Nextcloud Performance Check",
@@ -133,7 +134,8 @@ const translations = {
         label_link_speed: "Verbindungsgeschw.:",
         label_interface: "Schnittstelle",
         label_type: "Typ",
-        label_ip: "IP-Adresse"
+        label_ip: "IP-Adresse",
+        summary_view_logs: "Technische Logs anzeigen"
     }
 };
 

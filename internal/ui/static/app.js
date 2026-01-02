@@ -32,7 +32,10 @@ function setStage(stage) {
 function setProgress(percent) {
     if (progressBar) {
         progressBar.style.width = percent + "%";
-        progressBar.innerText = percent + "%";
+    }
+    const percEl = document.getElementById("progressPercentage");
+    if (percEl) {
+        percEl.innerText = percent + "%";
     }
 }
 
