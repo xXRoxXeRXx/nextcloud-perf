@@ -105,236 +105,234 @@
         </div>
 
         <!-- Results Card -->
-        <div class="card" id="resultsCard" style="display: none;">
-            <div id="resultHeader"
-                style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 25px;">
-                <i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
-                <h2 style="margin: 0;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
+        <div class="card" id="resultsCard" style="display: none; background: #f8f9fa;">
+            <div id="resultHeader" style="text-align: center; margin-bottom: 30px; color: white;">
+                <i class="fas fa-check-circle" style="font-size: 60px; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0; font-size: 2em;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
             </div>
 
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-desktop"></i> <span data-i18n="section_system_info">System
-                    Information</span></h3>
-            <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                <div class="card" style="padding: 15px;">
-                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_client_os">Client OS</div>
-                    <div style="font-weight: bold;" id="sysOS">--</div>
-                    <div style="font-size: 0.8em; color: gray; margin-top: 5px;" data-i18n="label_cpu_model">CPU Model
+            <!-- Category 1: Environment HUD -->
+            <div class="dashboard-section">
+                <h3 data-i18n="section_system_info"><i class="fas fa-desktop"></i> System Information</h3>
+                <div class="dashboard-grid">
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_client_os">Client OS</div>
+                        <div style="font-weight: bold; font-size: 1.1em; color: #003d8f;" id="sysOS">--</div>
+                        <div style="margin-top: 10px;" id="ncStatus" class="badge badge-blue"></div>
                     </div>
-                    <div style="font-size: 0.9em;" id="sysCPU">--</div>
-                    <div style="font-size: 0.9em;"><span data-i18n="label_cpu_usage">CPU Usage:</span> <span
-                            id="sysCPUUsage">--</span> (Peak: <span id="sysCPUPeak">--</span>)</div>
-                    <div id="ncStatus"
-                        style="margin-top: 10px; font-size: 0.85em; background: #e8f4fd; padding: 10px; border-radius: 5px; color: #003d8f; font-weight: bold; display: none;">
-                    </div>
-                </div>
-                <div class="card" style="padding: 15px;">
-                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_disk_io">Client Disk I/O</div>
-                    <div><span data-i18n="label_write">Write:</span> <span id="diskWrite">--</span></div>
-                    <div><span data-i18n="label_read">Read:</span> <span id="diskRead">--</span></div>
-                </div>
-                <div class="card" style="padding: 15px;">
-                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_memory_ram">Memory (RAM)</div>
-                    <div><span data-i18n="label_total">Total:</span> <span id="sysRAMTotal">--</span></div>
-                    <div><span data-i18n="label_used">Used:</span> <span id="sysRAMUsed">--</span></div>
-                    <div><span data-i18n="label_free">Free:</span> <span id="sysRAMFree">--</span></div>
-                </div>
-                <div class="card" style="padding: 15px;">
-                    <div style="font-size: 0.8em; color: gray;" data-i18n="label_local_network">Local Network</div>
-                    <div style="font-weight: bold; font-size: 1.1em;" id="netConnType">--</div>
-                    <div style="margin-top:5px; font-size: 0.9em;">
-                        <span data-i18n="label_primary_if">Primary Interface:</span> <span id="netPrimaryIF">--</span>
-                    </div>
-                    <div id="netInterfacesList" style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px;">
-                        <!-- Dynamically populated by app.js -->
-                    </div>
-                    <div id="advNetStats"
-                        style="margin-top:10px; font-size: 0.85em; background: #f8f9fa; padding: 10px; border-radius: 5px; display: none;">
-                        <div>SSL Handshake: <span id="valSSL">--</span></div>
-                        <div>MTU: <span id="valMTU">--</span></div>
-                        <div id="valVPN" style="color: #0082c9; font-weight: bold;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-globe"></i> <span data-i18n="header_ref_speed">Reference
-                    Speed (Speedtest.net)</span></h3>
-            <div class="card"
-                style="background: #f0f4ff; border-color: #d1dbff; text-align: center; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <div class="metric-label" style="font-weight: bold;" data-i18n="label_isp">Internet Service
-                            Provider</div>
-                        <div class="metric-value" style="font-size: 1.1em;" id="resProvider">--</div>
-                    </div>
-                    <div>
-                        <div class="metric-label" style="font-weight: bold;" data-i18n="label_server">Benchmark Server
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_cpu_model">Processor (CPU)</div>
+                        <div style="font-size: 0.95em; font-weight: 600;" id="sysCPU">--</div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                            <span data-i18n="label_cpu_usage">Usage:</span> <span id="sysCPUUsage">--</span>
+                            (Peak: <span id="sysCPUPeak">--</span>)
                         </div>
-                        <div class="metric-value" style="font-size: 1.1em;" id="resStServer">--</div>
                     </div>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div
-                    style="background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
-                    <div style="font-size: 0.85em; color: #166534;" data-i18n="label_upload_ref">Upload (Ref)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #166534;" id="refUp">--</div>
-                </div>
-                <div
-                    style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ffcccc;">
-                    <div style="font-size: 0.85em; color: #cc0000;" data-i18n="label_download_ref">Download (Ref)</div>
-                    <div style="font-size: 1.4em; font-weight: bold; color: #cc0000;" id="refDown">--</div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-tachometer-alt"></i> <span
-                    data-i18n="header_transfer_speed">Transfer Speed Results</span></h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_small_files">
-                        Small Files</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">5 x 512KB</div>
-                    <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resSmall">--</span>
-                        <span id="durSmallUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qSmallUp"></span>
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resSmallDown">--</span>
-                        <span id="durSmallDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qSmallDown"></span>
-                    </div>
-                    <div class="conclusion-text" id="concSmall"></div>
-                </div>
-                <div
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_medium_files">
-                        Medium Files</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">3 x 5MB</div>
-                    <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resMedium">--</span>
-                        <span id="durMedUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qMedUp"></span>
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resMediumDown">--</span>
-                        <span id="durMedDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qMedDown"></span>
-                    </div>
-                    <div class="conclusion-text" id="concMed"></div>
-                </div>
-                <div
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                    <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 5px;" data-i18n="label_large_file">Large
-                        File</div>
-                    <div style="font-size: 0.7em; opacity: 0.7;">256MB (25MB Chunks)</div>
-                    <div style="margin-top: 10px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_upload">Upload:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resLarge">--</span>
-                        <span id="durLargeUp" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qLargeUp"></span>
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span style="font-size: 0.8em; opacity: 0.8;" data-i18n="label_download">Download:</span>
-                        <span style="font-size: 1.2em; font-weight: bold;" id="resLargeDown">--</span>
-                        <span id="durLargeDown" style="font-size: 0.75em; opacity: 0.7; margin-left: 5px;"></span>
-                        <span class="quality-indicator quality-none" id="qLargeDown"></span>
-                    </div>
-                    <div class="conclusion-text" id="concLarge"></div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-network-wired"></i> <span
-                    data-i18n="header_network_summary">Network Summary</span></h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
-                <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_latency">Avg Latency</div>
-                    <div class="metric-value">
-                        <span id="resPing">--</span>
-                        <span class="quality-indicator quality-none" id="qPing"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_packet_loss">Packet Loss</div>
-                    <div class="metric-value">
-                        <span id="resPacketLoss">--</span>
-                        <span class="quality-indicator quality-none" id="qLoss"></span>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="font-size: 0.85em; opacity: 0.8;" data-i18n="label_dns">DNS Resolution</div>
-                    <div class="metric-value">
-                        <span id="resDNS">--</span>
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_memory_ram">Memory (RAM)</div>
+                        <div style="font-weight: bold;" id="sysRAMUsed">--</div>
+                        <div
+                            style="font-size: 0.8em; color: #888; display: grid; grid-template-columns: 1fr 1fr; margin-top: 5px;">
+                            <span>Total: <span id="sysRAMTotal">--</span></span>
+                            <span>Free: <span id="sysRAMFree">--</span></span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Detailed Ping Statistics Card -->
-            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px;">
-                <div class="card">
-                    <div class="metric-label"><span data-i18n="label_tcp_connect">TCP Connect</span> (<span
-                            id="pingCount">--</span> packets)</div>
-                    <div class="metric-value"><span data-i18n="label_avg">Avg:</span> <span id="pingAvg">--</span></div>
-                    <div class="metric-label"><span data-i18n="label_min">Min:</span> <span id="pingMin">--</span> |
-                        <span data-i18n="label_max">Max:</span> <span id="pingMax">--</span>
+            <!-- Category 2: Performance Core -->
+            <div class="dashboard-section">
+                <h3 data-i18n="header_transfer_speed"><i class="fas fa-tachometer-alt"></i> Transfer Speed Results</h3>
+                <div class="dashboard-grid">
+                    <!-- Small Files -->
+                    <div class="premium-card perf-card">
+                        <div class="badge badge-blue" data-i18n="label_small_files"
+                            style="margin-bottom: 10px; display: inline-block;">Small Files</div>
+                        <div style="font-size: 0.7em; color: #999;">5 x 512KB</div>
+
+                        <div class="metric-value" id="resSmall">--</div>
+                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durSmallUp"
+                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
+                                id="qSmallUp"></span></div>
+
+                        <div class="metric-value" id="resSmallDown">--</div>
+                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
+                                id="durSmallDown" style="font-weight: normal;"></span> <span
+                                class="quality-indicator quality-none" id="qSmallDown"></span></div>
+
+                        <div class="conclusion-text" id="concSmall"></div>
                     </div>
-                    <div class="metric-label"><span data-i18n="label_packet_loss">Packet Loss:</span> <span
-                            id="pingLoss">--</span></div>
+                    <!-- Medium Files -->
+                    <div class="premium-card perf-card">
+                        <div class="badge badge-blue" data-i18n="label_medium_files"
+                            style="margin-bottom: 10px; display: inline-block;">Medium Files</div>
+                        <div style="font-size: 0.7em; color: #999;">3 x 5MB</div>
+
+                        <div class="metric-value" id="resMedium">--</div>
+                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durMedUp"
+                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
+                                id="qMedUp"></span></div>
+
+                        <div class="metric-value" id="resMediumDown">--</div>
+                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
+                                id="durMedDown" style="font-weight: normal;"></span> <span
+                                class="quality-indicator quality-none" id="qMedDown"></span></div>
+
+                        <div class="conclusion-text" id="concMed"></div>
+                    </div>
+                    <!-- Large File -->
+                    <div class="premium-card perf-card">
+                        <div class="badge badge-blue" data-i18n="label_large_file"
+                            style="margin-bottom: 10px; display: inline-block;">Large File</div>
+                        <div style="font-size: 0.7em; color: #999;">256MB Chunked</div>
+
+                        <div class="metric-value" id="resLarge">--</div>
+                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durLargeUp"
+                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
+                                id="qLargeUp"></span></div>
+
+                        <div class="metric-value" id="resLargeDown">--</div>
+                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
+                                id="durLargeDown" style="font-weight: normal;"></span> <span
+                                class="quality-indicator quality-none" id="qLargeDown"></span></div>
+
+                        <div class="conclusion-text" id="concLarge"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Detailed Network Diagnostics -->
-            <div style="margin-top: 30px; margin-bottom: 25px;">
+            <!-- Category 3: Connectivity & Health -->
+            <div class="dashboard-section">
+                <h3 data-i18n="header_network_summary"><i class="fas fa-network-wired"></i> Connectivity & Diagnostics
+                </h3>
+                <div class="dashboard-grid">
+                    <!-- Network Health -->
+                    <div class="premium-card">
+                        <div class="metric-label">Network Health</div>
+                        <div style="margin-top: 10px; display: grid; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="label_latency">Latency:</span>
+                                <span><strong id="resPing">--</strong> <span class="quality-indicator quality-none"
+                                        id="qPing"></span></span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="label_packet_loss">Packet Loss:</span>
+                                <span><strong id="resPacketLoss">--</strong> <span
+                                        class="quality-indicator quality-none" id="qLoss"></span></span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="label_dns">DNS Resolution:</span>
+                                <strong id="resDNS">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Local Access -->
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_local_network">Local Access</div>
+                        <div style="font-weight: bold; margin: 8px 0; color: #003d8f;" id="netConnType">--</div>
+                        <div id="netInterfacesList" style="font-size: 0.85em; max-height: 100px; overflow-y: auto;">
+                        </div>
+                    </div>
+                    <!-- Advanced Stats -->
+                    <div class="premium-card">
+                        <div class="metric-label">Advanced Diagnostics</div>
+                        <div id="advNetStats" style="margin-top: 10px; font-size: 0.9em; display: grid; gap: 5px;">
+                            <div>SSL Handshake: <strong id="valSSL">--</strong></div>
+                            <div>Path MTU: <strong id="valMTU">--</strong></div>
+                            <div id="valVPN" style="color: #0082c9; font-weight: bold;"></div>
+                        </div>
+                    </div>
+                    <!-- Disk I/O -->
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_disk_io">Client Disk I/O</div>
+                        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div
+                                style="background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75em; color: #888;" data-i18n="label_write">Write</div>
+                                <div style="font-weight: bold;" id="diskWrite">--</div>
+                            </div>
+                            <div
+                                style="background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 0.75em; color: #888;" data-i18n="label_read">Read</div>
+                                <div style="font-weight: bold;" id="diskRead">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Diagnostics Toggle -->
+            <div style="margin: 20px 0;">
                 <details>
-                    <summary style="cursor:pointer; color: #003d8f; font-weight:bold; margin-bottom: 10px;"
-                        data-i18n="summary_view_ping">View Detailed Ping Results</summary>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                        <thead>
-                            <tr style="background: #f2f2f2;">
-                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_seq">Seq</th>
-                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_time">Time (ms)</th>
-                                <th style="padding:5px; border:1px solid #ddd;" data-i18n="th_status">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pingTableBody">
-                        </tbody>
-                    </table>
+                    <summary
+                        style="cursor: pointer; color: #003d8f; font-weight: bold; text-align: center; padding: 10px; background: rgba(0,61,143,0.05); border-radius: 10px;"
+                        data-i18n="section_network_diagnostics">
+                        View Detailed Diagnostics (Ping, DNS, Traceroute)
+                    </summary>
+                    <div
+                        style="padding: 20px; background: white; border-radius: 0 0 16px 16px; border: 1px solid #eee; border-top: none;">
+                        <div class="dashboard-grid">
+                            <div class="premium-card" style="background: #fff;">
+                                <h4 data-i18n="label_tcp_connect">TCP Connect</h4>
+                                <div style="font-size: 0.9em; margin-top: 10px;">
+                                    <div style="display: flex; justify-content: space-between;"><span>Avg:</span>
+                                        <strong id="pingAvg">--</strong></div>
+                                    <div style="display: flex; justify-content: space-between;"><span>Min:</span> <span
+                                            id="pingMin">--</span></div>
+                                    <div style="display: flex; justify-content: space-between;"><span>Max:</span> <span
+                                            id="pingMax">--</span></div>
+                                </div>
+                            </div>
+                            <div class="premium-card" style="background: #fff;">
+                                <h4 data-i18n="label_dns">DNS IPs</h4>
+                                <div id="dnsIPs"
+                                    style="font-family: monospace; font-size: 0.8em; margin-top: 10px; max-height: 80px; overflow-y: auto;">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <h4 style="margin-bottom: 5px;">Traceroute Path</h4>
+                            <div id="tracerouteBox" class="log-output" style="max-height: 150px; font-size: 0.8em;">
+                            </div>
+                        </div>
+                    </div>
                 </details>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <h4>DNS & Traceroute</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="card">
-                        <div class="metric-label" data-i18n="label_dns">DNS Resolution</div>
-                        <div id="dnsTime" style="font-size: 1.1em; font-weight: bold; margin-bottom: 5px;">--</div>
-                        <div id="dnsIPs"
-                            style="font-size: 0.85em; max-height: 150px; overflow-y: auto; font-family: monospace;">-
-                        </div>
+            <!-- Category 4: Reference context -->
+            <div class="dashboard-section"
+                style="background: #f0f4ff; padding: 20px; border-radius: 16px; border: 1px solid #d1dbff;">
+                <h3 data-i18n="header_ref_speed" style="color: #003d8f;"><i class="fas fa-globe"></i> Reference
+                    Speedtest</h3>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+                    <div>
+                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_isp">ISP:</div>
+                        <div style="font-weight: 600;" id="resProvider">--</div>
                     </div>
-                    <div id="tracerouteBox" class="log-output"
-                        style="background: #2d2d2d; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 0.8em; max-height: 200px; margin-top:0;">
-                        <!-- Populated by JS -->
+                    <div>
+                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_server">Server:</div>
+                        <div style="font-weight: 600;" id="resStServer">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_upload_ref">Ref Upload:</div>
+                        <div style="font-weight: bold; color: #166534;" id="refUp">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_download_ref">Ref Download:</div>
+                        <div style="font-weight: bold; color: #cc0000;" id="refDown">--</div>
                     </div>
                 </div>
             </div>
 
-            <div style="text-align: center; margin-top: 30px;">
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
                 <a href="/report/download" target="_blank" class="btn-primary"
-                    style="display: inline-block; text-decoration: none; padding: 18px 50px; font-size: 1.1em;">
-                    <i class="fas fa-file-download"></i> <span data-i18n="btn_download_report">Download Detailed
-                        Report</span>
+                    style="flex: 1; text-decoration: none; padding: 18px;">
+                    <i class="fas fa-file-download"></i> <span data-i18n="btn_download_report">Download Report</span>
                 </a>
-            </div>
-
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="btn-secondary" onclick="location.reload()" style="padding: 12px 30px;">
-                    <i class="fas fa-redo"></i> <span data-i18n="btn_run_new">Run New Test</span>
+                <button class="btn-secondary" onclick="location.reload()"
+                    style="background: #e0e7ff; color: #003d8f; border: none; padding: 18px; border-radius: 12px; cursor: pointer; font-weight: bold;">
+                    <i class="fas fa-redo"></i> <span data-i18n="btn_run_new">Restart</span>
                 </button>
             </div>
         </div>

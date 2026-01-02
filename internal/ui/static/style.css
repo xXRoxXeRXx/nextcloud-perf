@@ -416,75 +416,136 @@ select:focus {
     }
 }
 
-.fail-dot {
-    color: #ff4757;
+/* Dashboard Layout */
+.dashboard-section {
+    margin-bottom: 35px;
 }
 
-.quality-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-left: 5px;
-    vertical-align: middle;
+.dashboard-section h3 {
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.quality-green {
-    background-color: #2ecc71;
-    box-shadow: 0 0 8px #2ecc71;
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
 }
 
-.quality-yellow {
-    background-color: #f1c40f;
-    box-shadow: 0 0 8px #f1c40f;
+.premium-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.quality-red {
-    background-color: #e74c3c;
-    box-shadow: 0 0 8px #e74c3c;
+.premium-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-.quality-none {
-    background-color: #bdc3c7;
+/* Performance Highlight Cards */
+.perf-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+    border-left: 5px solid #667eea;
 }
 
-.conclusion-text {
-    margin-top: 10px;
-    font-size: 0.8em;
-    font-weight: bold;
-    padding-top: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+.perf-card .metric-value {
+    font-size: 1.8em;
+    font-weight: 800;
+    color: #003d8f;
+    margin: 10px 0;
 }
 
-.text-green {
+.perf-card .metric-label {
+    font-size: 0.9em;
+    color: var(--text-tertiary);
+    font-weight: 600;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-blue {
+    background: #e8f4fd;
+    color: #003d8f;
+}
+
+.badge-green {
+    background: #e8fdf4;
     color: #27ae60;
 }
 
-.text-yellow {
+.badge-yellow {
+    background: #fff9e6;
     color: #d68910;
 }
 
-.text-red {
+.badge-red {
+    background: #fff5f5;
     color: #c0392b;
+}
+
+/* Result Header Hero */
+#resultHeader {
+    background: linear-gradient(135deg, #003d8f 0%, #001b41 100%) !important;
+    padding: 40px !important;
+    border-radius: 20px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+#resultHeader::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.quality-indicator {
+    width: 14px;
+    height: 14px;
 }
 
 .lang-toggle {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(0, 130, 201, 0.1);
-    padding: 5px 10px;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 15px;
+    border-radius: 25px;
     cursor: pointer;
-    color: #0082c9;
+    color: white;
     font-size: 0.9em;
-    border: 1px solid rgba(0, 130, 201, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     font-weight: bold;
     transition: all 0.2s;
+    z-index: 100;
+    backdrop-filter: blur(5px);
 }
 
 .lang-toggle:hover {
-    background: rgba(0, 130, 201, 0.2);
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
 }
 
 header {

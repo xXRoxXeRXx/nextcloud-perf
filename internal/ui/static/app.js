@@ -348,14 +348,13 @@ evtSource.addEventListener("result", function (event) {
 
         if (data.cloud_check) {
             const cc = data.cloud_check;
-            const ncStatusEl = document.getElementById('ncStatus');
-            if (cc.status) {
-                ncStatusEl.style.display = 'block';
-                let statusText = `${cc.status} ${cc.version}`;
+            const statusEl = document.getElementById('ncStatus');
+            if (statusEl) {
+                let statusText = `Nextcloud ${cc.version || "--"}`;
                 if (cc.edition) statusText += ` (${cc.edition})`;
-                if (cc.maintenance) statusText += ` [MAINTENANCE MODE]`;
-                ncStatusEl.innerText = statusText;
-                if (cc.maintenance) ncStatusEl.style.background = '#fff5f5';
+                if (cc.maintenance_mode) statusText += " [Maintenance]";
+                statusEl.innerText = statusText;
+                statusEl.style.display = 'inline-block';
             }
         }
 
