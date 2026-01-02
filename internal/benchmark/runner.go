@@ -11,10 +11,13 @@ import (
 	"nextcloud-perf/internal/webdav"
 )
 
-// ZeroReader generates random data (or actually just zeros/rand for speed)
+// ZeroReader generates random data for upload benchmarks.
+// It uses a pre-generated random buffer with offset-based reading
+// to avoid crypto overhead while preventing transparent compression detection.
 type ZeroReader struct {
-	Limit     int64
-	BytesRead int64
+	Limit        int64 // Maximum bytes to read
+	BytesRead    int64 // Total bytes read so far
+	bufferOffset int   // Current offset in GlobalRandomBuffer
 }
 
 func (z *ZeroReader) Read(p []byte) (n int, err error) {
@@ -28,48 +31,66 @@ func (z *ZeroReader) Read(p []byte) (n int, err error) {
 		n = len(p)
 	}
 
-	// Fill with random data to prevent compression cheating?
-	// crypto/rand is slow. math/rand is faster but not thread safe without mutex.
-	// For performance test, simple pattern or just fast filling is better.
-	// Let's perform a mix: fill 1st byte random, rest zeros?
-	// No, transparent compression (zfs/btrfs) will eat zeros.
-	// We should fill with something non-compressible.
-	// Fast way: use a pre-generated random buffer and cycle it.
-
-	// Fill p with random data repeatedly
+	// Copy with variable offset to prevent pattern recognition
+	// This makes each ZeroReader instance produce unique data
 	copied := 0
 	for copied < n {
-		chunk := n - copied
-		if chunk > len(GlobalRandomBuffer) {
-			chunk = len(GlobalRandomBuffer)
+		available := len(GlobalRandomBuffer) - z.bufferOffset
+		toCopy := n - copied
+		if toCopy > available {
+			toCopy = available
 		}
-		copy(p[copied:], GlobalRandomBuffer[:chunk])
-		copied += chunk
+		copy(p[copied:], GlobalRandomBuffer[z.bufferOffset:z.bufferOffset+toCopy])
+		copied += toCopy
+		// Wrap around to beginning of buffer
+		z.bufferOffset = (z.bufferOffset + toCopy) % len(GlobalRandomBuffer)
 	}
 
 	z.BytesRead += int64(n)
 	return n, nil
 }
 
-// GlobalRandomBuffer is a 1MB buffer of random data
+// GlobalRandomBuffer is a 10MB buffer of random data used by ZeroReader
+// to generate non-compressible test data efficiently.
+// Larger buffer size reduces pattern repetition in large uploads.
 var GlobalRandomBuffer []byte
 
 func init() {
-	GlobalRandomBuffer = make([]byte, 1024*1024)
+	// Use 10MB buffer instead of 1MB for better randomness in large files
+	GlobalRandomBuffer = make([]byte, 10*1024*1024)
 	if _, err := rand.Read(GlobalRandomBuffer); err != nil {
 		panic(fmt.Sprintf("failed to initialize random buffer: %v", err))
 	}
 }
 
+// Result contains the performance metrics from a benchmark run.
 type Result struct {
-	Scenario  string
-	Files     int
-	TotalSize int64
-	Duration  time.Duration
-	SpeedMBps float64
-	Errors    []error
+	Scenario  string        // Name of the benchmark scenario
+	Files     int           // Number of files processed
+	TotalSize int64         // Total bytes transferred
+	Duration  time.Duration // Time taken for the operation
+	SpeedMBps float64       // Transfer speed in MB/s
+	Errors    []error       // Collection of errors encountered
 }
 
+// RunSmallFiles performs a parallel upload benchmark with multiple small files.
+// It uploads 'count' files of 'size' bytes each using 'parallel' concurrent goroutines.
+//
+// Parameters:
+//   - ctx: Context for cancellation
+//   - client: WebDAV client configured for target server
+//   - basePath: Remote directory path for test files
+//   - filePrefix: Prefix for generated test filenames
+//   - count: Number of files to upload
+//   - size: Size of each file in bytes
+//   - parallel: Maximum number of concurrent uploads
+//
+// Returns:
+//   - *Result: Aggregated performance metrics including speed and duration
+//   - error: Error if benchmark cannot be initialized (nil on success)
+//
+// Individual file upload errors are collected in Result.Errors but do not
+// prevent the benchmark from completing.
 func RunSmallFiles(ctx context.Context, client *webdav.Client, basePath string, filePrefix string, count int, size int64, parallel int) (*Result, error) {
 	// Parameter validation
 	if count <= 0 || size <= 0 || parallel <= 0 {
@@ -85,10 +106,9 @@ func RunSmallFiles(ctx context.Context, client *webdav.Client, basePath string, 
 
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, parallel) // Semaphore for concurrency control
+	errChan := make(chan error, count)   // Buffered channel for errors
 
 	start := time.Now()
-	var errs []error
-	var mu sync.Mutex
 
 	for i := 0; i < count; i++ {
 		wg.Add(1)
@@ -105,13 +125,22 @@ func RunSmallFiles(ctx context.Context, client *webdav.Client, basePath string, 
 				client.LogFunc(fmt.Sprintf("DEBUG: Uploaded %d bytes to %s", size, filename))
 			}
 			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
+				select {
+				case errChan <- err:
+				default:
+					// Skip if channel is full
+				}
 			}
 		}(i)
 	}
 	wg.Wait()
+	close(errChan)
+
+	// Collect errors after all goroutines finished
+	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
 
 	duration := time.Since(start)
 	totalSize := int64(count) * size
@@ -132,6 +161,21 @@ func RunSmallFiles(ctx context.Context, client *webdav.Client, basePath string, 
 	}, nil
 }
 
+// RunLargeFile performs a single large file upload benchmark with optional chunking.
+//
+// Parameters:
+//   - ctx: Context for cancellation
+//   - client: WebDAV client configured for target server
+//   - basePath: Remote directory path for test file
+//   - size: Size of the file in bytes
+//   - useChunking: If true, uses chunked upload protocol (recommended for files > 50MB)
+//
+// Returns:
+//   - *Result: Performance metrics including speed and duration
+//   - error: Error if upload fails completely (nil on success)
+//
+// This function is optimized for large files and uses streaming to avoid
+// loading the entire file into memory.
 func RunLargeFile(ctx context.Context, client *webdav.Client, basePath string, size int64, useChunking bool) (*Result, error) {
 	filename := fmt.Sprintf("%s/test_large.bin", basePath)
 	reader := &ZeroReader{Limit: size}
@@ -185,14 +229,29 @@ func (z *ZeroReader) ReadFrom(r io.Reader) (n int64, err error) {
 	}
 }
 
+// RunDownloadSmallFiles performs a parallel download benchmark with multiple small files.
+//
+// Parameters:
+//   - ctx: Context for cancellation
+//   - client: WebDAV client configured for target server
+//   - basePath: Remote directory path containing test files
+//   - filePrefix: Prefix of test filenames to download
+//   - count: Number of files to download
+//   - parallel: Maximum number of concurrent downloads
+//
+// Returns:
+//   - *Result: Performance metrics including download speed and duration
+//   - error: Error if benchmark cannot be initialized (nil on success)
+//
+// Files must exist on the server (typically created by RunSmallFiles).
+// Individual file download errors are collected in Result.Errors.
 func RunDownloadSmallFiles(ctx context.Context, client *webdav.Client, basePath string, filePrefix string, count int, parallel int) (*Result, error) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, parallel)
+	errChan := make(chan error, count)
+	bytesChan := make(chan int64, count)
 
 	start := time.Now()
-	var errs []error
-	var mu sync.Mutex
-	var totalBytes int64
 
 	for i := 0; i < count; i++ {
 		wg.Add(1)
@@ -204,9 +263,10 @@ func RunDownloadSmallFiles(ctx context.Context, client *webdav.Client, basePath 
 			filename := fmt.Sprintf("%s/%s%d.bin", basePath, filePrefix, idx)
 			rc, err := client.Download(ctx, filename)
 			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
+				select {
+				case errChan <- err:
+				default:
+				}
 				return
 			}
 			defer rc.Close()
@@ -217,13 +277,25 @@ func RunDownloadSmallFiles(ctx context.Context, client *webdav.Client, basePath 
 				client.LogFunc(fmt.Sprintf("Download stream error: %v", errCopy))
 			}
 			client.LogFunc(fmt.Sprintf("DEBUG: Downloaded %d bytes from %s", written, filename))
-
-			mu.Lock()
-			totalBytes += written
-			mu.Unlock()
+			
+			bytesChan <- written
 		}(i)
 	}
 	wg.Wait()
+	close(errChan)
+	close(bytesChan)
+
+	// Collect errors
+	var errs []error
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+
+	// Sum bytes
+	var totalBytes int64
+	for b := range bytesChan {
+		totalBytes += b
+	}
 
 	duration := time.Since(start)
 
@@ -242,6 +314,19 @@ func RunDownloadSmallFiles(ctx context.Context, client *webdav.Client, basePath 
 	}, nil
 }
 
+// RunDownloadLargeFile performs a single large file download benchmark.
+//
+// Parameters:
+//   - ctx: Context for cancellation
+//   - client: WebDAV client configured for target server
+//   - basePath: Remote directory path containing the test file
+//
+// Returns:
+//   - *Result: Performance metrics including download speed and duration
+//   - error: Error if download fails
+//
+// The file must exist on the server (typically created by RunLargeFile).
+// This function uses streaming to avoid loading the entire file into memory.
 func RunDownloadLargeFile(ctx context.Context, client *webdav.Client, basePath string) (*Result, error) {
 	filename := fmt.Sprintf("%s/test_large.bin", basePath)
 

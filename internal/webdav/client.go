@@ -54,7 +54,22 @@ func NewClient(url, user, pass string, logFunc func(string)) *Client {
 		Client: &http.Client{
 			Timeout: 5 * time.Minute,
 			Transport: &http.Transport{
+				// Connection Pooling Configuration
+				MaxIdleConns:        100,              // Maximum idle connections across all hosts
+				MaxIdleConnsPerHost: 20,               // Maximum idle connections per host
+				MaxConnsPerHost:     50,               // Maximum connections per host (including active)
+				IdleConnTimeout:     90 * time.Second, // How long idle connections stay open
+				
+				// Timeout Configuration
+				TLSHandshakeTimeout:   10 * time.Second, // TLS handshake timeout
+				ResponseHeaderTimeout: 10 * time.Second, // Response header read timeout
+				ExpectContinueTimeout: 1 * time.Second,  // Time to wait for 100-Continue response
+				
+				// HTTP/2 Disabled (known Nextcloud performance issues with HTTP/2)
 				TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+				
+				// Keep-Alive enabled (improves performance for multiple requests)
+				DisableKeepAlives: false,
 			},
 		},
 		LogFunc: logFunc,
