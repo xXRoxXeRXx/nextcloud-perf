@@ -31,12 +31,12 @@
                 <div class="form-group">
                     <label for="user" data-i18n="label_username">Username</label>
                     <input type="text" id="user" data-i18n-placeholder="placeholder_username"
-                        placeholder="Your Username">
+                        placeholder="Your Username" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="pass" data-i18n="label_password">Password / App Token</label>
                     <input type="password" id="pass" data-i18n-placeholder="placeholder_password"
-                        placeholder="Your Password">
+                        placeholder="Your Password" autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-tachometer-alt"></i> <span data-i18n="btn_start">Start Benchmark</span>
@@ -105,10 +105,28 @@
         </div>
 
         <!-- Results Card -->
-        <div class="card" id="resultsCard" style="display: none; background: #f8f9fa;">
+        <div id="resultsCard" class="card" style="display: none; background: #f8f9fa;">
             <div id="resultHeader" style="text-align: center; margin-bottom: 30px; color: white;">
                 <i class="fas fa-check-circle" style="font-size: 60px; margin-bottom: 15px;"></i>
                 <h2 style="margin: 0; font-size: 2em;" data-i18n="benchmark_completed">Benchmark Completed!</h2>
+            </div>
+
+            <!-- Category 0: Server Information -->
+            <div class="dashboard-section">
+                <h3 data-i18n="section_server_info"><i class="fas fa-server"></i> Server Information</h3>
+                <div class="dashboard-grid">
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_url">Target URL</div>
+                        <div style="font-weight: bold; font-size: 1em; color: #003d8f; word-break: break-all;"
+                            id="resURL">--</div>
+                    </div>
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_version">Software Version</div>
+                        <div style="font-weight: bold; font-size: 1.1em; color: #003d8f;" id="ncStatusDetail">Nextcloud
+                            --</div>
+                        <div style="margin-top: 10px; display: none;" id="ncStatusBadge" class="badge"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Category 1: Environment HUD -->
@@ -118,85 +136,114 @@
                     <div class="premium-card">
                         <div class="metric-label" data-i18n="label_client_os">Client OS</div>
                         <div style="font-weight: bold; font-size: 1.1em; color: #003d8f;" id="sysOS">--</div>
-                        <div style="margin-top: 10px;" id="ncStatus" class="badge badge-blue"></div>
                     </div>
                     <div class="premium-card">
-                        <div class="metric-label" data-i18n="label_cpu_model">Processor (CPU)</div>
-                        <div style="font-size: 0.95em; font-weight: 600;" id="sysCPU">--</div>
-                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        <div class="metric-label" data-i18n="label_cpu_model">CPU Model</div>
+                        <div style="font-weight: bold; color: #333;" id="sysCPU">--</div>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
                             <span data-i18n="label_cpu_usage">Usage:</span> <span id="sysCPUUsage">--</span>
                             (Peak: <span id="sysCPUPeak">--</span>)
                         </div>
                     </div>
                     <div class="premium-card">
                         <div class="metric-label" data-i18n="label_memory_ram">Memory (RAM)</div>
-                        <div style="font-weight: bold;" id="sysRAMUsed">--</div>
-                        <div
-                            style="font-size: 0.8em; color: #888; display: grid; grid-template-columns: 1fr 1fr; margin-top: 5px;">
-                            <span>Total: <span id="sysRAMTotal">--</span></span>
-                            <span>Free: <span id="sysRAMFree">--</span></span>
+                        <div id="sysRAMTotal" style="font-weight: bold; color: #333;">--</div>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                            <span data-i18n="label_used">Used:</span> <span id="sysRAMUsed">--</span>
                         </div>
+                    </div>
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_disk_io">Client Disk I/O</div>
+                        <div style="display: flex; gap: 15px; margin-top: 5px;">
+                            <div>
+                                <div style="font-size: 0.8em; color: #666;" data-i18n="label_write">Write:</div>
+                                <div id="diskWrite" style="font-weight: bold; color: #27ae60;">--</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.8em; color: #666;" data-i18n="label_read">Read:</div>
+                                <div id="diskRead" style="font-weight: bold; color: #003d8f;">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category 3: Reference Section -->
+            <div class="dashboard-section">
+                <h3 data-i18n="header_ref_speed"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
+                <div class="dashboard-grid">
+                    <div class="premium-card">
+                        <div class="metric-label" data-i18n="label_isp">Internet Service Provider</div>
+                        <div style="font-weight: bold; color: #333;" id="resProvider">--</div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;" id="resStServer">--</div>
+                    </div>
+                    <div class="premium-card" style="border-bottom: 3px solid #27ae60;">
+                        <div class="metric-label" data-i18n="label_upload_ref">Upload (Ref)</div>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #27ae60;" id="refUp">--</div>
+                    </div>
+                    <div class="premium-card" style="border-bottom: 3px solid #003d8f;">
+                        <div class="metric-label" data-i18n="label_download_ref">Download (Ref)</div>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #003d8f;" id="refDown">--</div>
                     </div>
                 </div>
             </div>
 
             <!-- Category 2: Performance Core -->
             <div class="dashboard-section">
-                <h3 data-i18n="header_transfer_speed"><i class="fas fa-tachometer-alt"></i> Transfer Speed Results</h3>
-                <div class="dashboard-grid">
+                <h3 data-i18n="header_transfer_speed"><i class="fas fa-bolt"></i> Performance Core</h3>
+                <div class="dashboard-grid perf-grid">
                     <!-- Small Files -->
                     <div class="premium-card perf-card">
-                        <div class="badge badge-blue" data-i18n="label_small_files"
-                            style="margin-bottom: 10px; display: inline-block;">Small Files</div>
-                        <div style="font-size: 0.7em; color: #999;">5 x 512KB</div>
-
-                        <div class="metric-value" id="resSmall">--</div>
-                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durSmallUp"
-                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
-                                id="qSmallUp"></span></div>
-
-                        <div class="metric-value" id="resSmallDown">--</div>
-                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
-                                id="durSmallDown" style="font-weight: normal;"></span> <span
-                                class="quality-indicator quality-none" id="qSmallDown"></span></div>
-
-                        <div class="conclusion-text" id="concSmall"></div>
+                        <div class="metric-label" data-i18n="label_small_files">Small Files</div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_upload">Upload:</span>
+                            <span class="value" id="resSmall">--</span>
+                            <div class="quality-indicator quality-none" id="qSmallUp"></div>
+                            <span class="duration" id="durSmallUp">--</span>
+                        </div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_download">Download:</span>
+                            <span class="value" id="resSmallDown">--</span>
+                            <div class="quality-indicator quality-none" id="qSmallDown"></div>
+                            <span class="duration" id="durSmallDown">--</span>
+                        </div>
+                        <div id="concSmall" class="conclusion-text"></div>
                     </div>
+
                     <!-- Medium Files -->
                     <div class="premium-card perf-card">
-                        <div class="badge badge-blue" data-i18n="label_medium_files"
-                            style="margin-bottom: 10px; display: inline-block;">Medium Files</div>
-                        <div style="font-size: 0.7em; color: #999;">3 x 5MB</div>
-
-                        <div class="metric-value" id="resMedium">--</div>
-                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durMedUp"
-                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
-                                id="qMedUp"></span></div>
-
-                        <div class="metric-value" id="resMediumDown">--</div>
-                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
-                                id="durMedDown" style="font-weight: normal;"></span> <span
-                                class="quality-indicator quality-none" id="qMedDown"></span></div>
-
-                        <div class="conclusion-text" id="concMed"></div>
+                        <div class="metric-label" data-i18n="label_medium_files">Medium Files</div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_upload">Upload:</span>
+                            <span class="value" id="resMedium">--</span>
+                            <div class="quality-indicator quality-none" id="qMedUp"></div>
+                            <span class="duration" id="durMedUp">--</span>
+                        </div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_download">Download:</span>
+                            <span class="value" id="resMediumDown">--</span>
+                            <div class="quality-indicator quality-none" id="qMedDown"></div>
+                            <span class="duration" id="durMedDown">--</span>
+                        </div>
+                        <div id="concMed" class="conclusion-text"></div>
                     </div>
+
                     <!-- Large File -->
                     <div class="premium-card perf-card">
-                        <div class="badge badge-blue" data-i18n="label_large_file"
-                            style="margin-bottom: 10px; display: inline-block;">Large File</div>
-                        <div style="font-size: 0.7em; color: #999;">256MB Chunked</div>
-
-                        <div class="metric-value" id="resLarge">--</div>
-                        <div class="metric-label"><span data-i18n="label_upload">Upload:</span> <span id="durLargeUp"
-                                style="font-weight: normal;"></span> <span class="quality-indicator quality-none"
-                                id="qLargeUp"></span></div>
-
-                        <div class="metric-value" id="resLargeDown">--</div>
-                        <div class="metric-label"><span data-i18n="label_download">Download:</span> <span
-                                id="durLargeDown" style="font-weight: normal;"></span> <span
-                                class="quality-indicator quality-none" id="qLargeDown"></span></div>
-
-                        <div class="conclusion-text" id="concLarge"></div>
+                        <div class="metric-label" data-i18n="label_large_file">Large File</div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_upload">Upload:</span>
+                            <span class="value" id="resLarge">--</span>
+                            <div class="quality-indicator quality-none" id="qLargeUp"></div>
+                            <span class="duration" id="durLargeUp">--</span>
+                        </div>
+                        <div class="perf-metric">
+                            <span data-i18n="label_download">Download:</span>
+                            <span class="value" id="resLargeDown">--</span>
+                            <div class="quality-indicator quality-none" id="qLargeDown"></div>
+                            <span class="duration" id="durLargeDown">--</span>
+                        </div>
+                        <div id="concLarge" class="conclusion-text"></div>
                     </div>
                 </div>
             </div>
@@ -242,22 +289,6 @@
                             <div id="valVPN" style="color: #0082c9; font-weight: bold;"></div>
                         </div>
                     </div>
-                    <!-- Disk I/O -->
-                    <div class="premium-card">
-                        <div class="metric-label" data-i18n="label_disk_io">Client Disk I/O</div>
-                        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div
-                                style="background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; text-align: center;">
-                                <div style="font-size: 0.75em; color: #888;" data-i18n="label_write">Write</div>
-                                <div style="font-weight: bold;" id="diskWrite">--</div>
-                            </div>
-                            <div
-                                style="background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; text-align: center;">
-                                <div style="font-size: 0.75em; color: #888;" data-i18n="label_read">Read</div>
-                                <div style="font-weight: bold;" id="diskRead">--</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -275,16 +306,27 @@
                             <div class="premium-card" style="background: #fff;">
                                 <h4 data-i18n="label_tcp_connect">TCP Connect</h4>
                                 <div style="font-size: 0.9em; margin-top: 10px;">
+                                    <div style="display: flex; justify-content: space-between;"><span>Packets:</span>
+                                        <strong id="pingCount">--</strong>
+                                    </div>
                                     <div style="display: flex; justify-content: space-between;"><span>Avg:</span>
-                                        <strong id="pingAvg">--</strong></div>
-                                    <div style="display: flex; justify-content: space-between;"><span>Min:</span> <span
-                                            id="pingMin">--</span></div>
-                                    <div style="display: flex; justify-content: space-between;"><span>Max:</span> <span
-                                            id="pingMax">--</span></div>
+                                        <strong id="pingAvg">--</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;"><span>Min/Max:</span>
+                                        <span><span id="pingMin">--</span> / <span id="pingMax">--</span></span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;"><span>Loss:</span>
+                                        <strong id="pingLoss">--</strong>
+                                    </div>
                                 </div>
                             </div>
                             <div class="premium-card" style="background: #fff;">
                                 <h4 data-i18n="label_dns">DNS IPs</h4>
+                                <div style="font-size: 0.9em; margin-top: 10px;">
+                                    <div style="display: flex; justify-content: space-between;"><span>Time:</span>
+                                        <strong id="dnsTime">--</strong>
+                                    </div>
+                                </div>
                                 <div id="dnsIPs"
                                     style="font-family: monospace; font-size: 0.8em; margin-top: 10px; max-height: 80px; overflow-y: auto;">
                                 </div>
@@ -299,39 +341,15 @@
                 </details>
             </div>
 
-            <!-- Category 4: Reference context -->
-            <div class="dashboard-section"
-                style="background: #f0f4ff; padding: 20px; border-radius: 16px; border: 1px solid #d1dbff;">
-                <h3 data-i18n="header_ref_speed" style="color: #003d8f;"><i class="fas fa-globe"></i> Reference
-                    Speedtest</h3>
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
-                    <div>
-                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_isp">ISP:</div>
-                        <div style="font-weight: 600;" id="resProvider">--</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_server">Server:</div>
-                        <div style="font-weight: 600;" id="resStServer">--</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_upload_ref">Ref Upload:</div>
-                        <div style="font-weight: bold; color: #166534;" id="refUp">--</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.8em; color: #666;" data-i18n="label_download_ref">Ref Download:</div>
-                        <div style="font-weight: bold; color: #cc0000;" id="refDown">--</div>
-                    </div>
-                </div>
-            </div>
 
+            <!-- Action Buttons -->
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
                 <a href="/report/download" target="_blank" class="btn-primary"
-                    style="flex: 1; text-decoration: none; padding: 18px;">
+                    style="flex: 1; text-decoration: none; padding: 18px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;">
                     <i class="fas fa-file-download"></i> <span data-i18n="btn_download_report">Download Report</span>
                 </a>
                 <button class="btn-secondary" onclick="location.reload()"
-                    style="background: #e0e7ff; color: #003d8f; border: none; padding: 18px; border-radius: 12px; cursor: pointer; font-weight: bold;">
+                    style="background: #e0e7ff; color: #003d8f; border: none; padding: 18px; border-radius: 12px; cursor: pointer; font-weight: bold; flex: 0.5;">
                     <i class="fas fa-redo"></i> <span data-i18n="btn_run_new">Restart</span>
                 </button>
             </div>

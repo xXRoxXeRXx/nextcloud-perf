@@ -7,10 +7,10 @@ import (
 )
 
 type PingResult struct {
-	Seq      int
-	TimeMs   float64
-	Success  bool
-	ErrorMsg string
+	Seq      int     `json:"seq"`
+	TimeMs   float64 `json:"time_ms"`
+	Success  bool    `json:"success"`
+	ErrorMsg string  `json:"error_msg"`
 }
 
 type DetailedPingStats struct {

@@ -5,6 +5,11 @@ const currentStatus = document.getElementById("currentStatus");
 
 let currentStage = '';
 
+function setSafeText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+}
+
 const stages = ['system', 'network', 'connect', 'benchmark', 'report'];
 function setStage(stage) {
     if (currentStage === stage) return;
@@ -200,45 +205,47 @@ evtSource.addEventListener("result", function (event) {
 
         // Populate results (Transfer Speeds)
         if (data.small_files) {
-            document.getElementById('resSmall').innerText = (data.small_files.speed_mbps > 0) ? (data.small_files.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.small_files.duration > 0) document.getElementById('durSmallUp').innerText = (data.small_files.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resSmall', (data.small_files.speed_mbps > 0) ? (data.small_files.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.small_files.duration > 0) setSafeText('durSmallUp', (data.small_files.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.small_files_down) {
-            document.getElementById('resSmallDown').innerText = (data.small_files_down.speed_mbps > 0) ? (data.small_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.small_files_down.duration > 0) document.getElementById('durSmallDown').innerText = (data.small_files_down.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resSmallDown', (data.small_files_down.speed_mbps > 0) ? (data.small_files_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.small_files_down.duration > 0) setSafeText('durSmallDown', (data.small_files_down.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.medium_files) {
-            document.getElementById('resMedium').innerText = (data.medium_files.speed_mbps > 0) ? (data.medium_files.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.medium_files.duration > 0) document.getElementById('durMedUp').innerText = (data.medium_files.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resMedium', (data.medium_files.speed_mbps > 0) ? (data.medium_files.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.medium_files.duration > 0) setSafeText('durMedUp', (data.medium_files.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.medium_files_down) {
-            document.getElementById('resMediumDown').innerText = (data.medium_files_down.speed_mbps > 0) ? (data.medium_files_down.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.medium_files_down.duration > 0) document.getElementById('durMedDown').innerText = (data.medium_files_down.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resMediumDown', (data.medium_files_down.speed_mbps > 0) ? (data.medium_files_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.medium_files_down.duration > 0) setSafeText('durMedDown', (data.medium_files_down.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.large_file) {
-            document.getElementById('resLarge').innerText = (data.large_file.speed_mbps > 0) ? (data.large_file.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.large_file.duration > 0) document.getElementById('durLargeUp').innerText = (data.large_file.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resLarge', (data.large_file.speed_mbps > 0) ? (data.large_file.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.large_file.duration > 0) setSafeText('durLargeUp', (data.large_file.duration / 1000000000).toFixed(1) + "s");
         }
         if (data.large_file_down) {
-            document.getElementById('resLargeDown').innerText = (data.large_file_down.speed_mbps > 0) ? (data.large_file_down.speed_mbps.toFixed(2) + " MB/s") : "--";
-            if (data.large_file_down.duration > 0) document.getElementById('durLargeDown').innerText = (data.large_file_down.duration / 1000000000).toFixed(1) + "s";
+            setSafeText('resLargeDown', (data.large_file_down.speed_mbps > 0) ? (data.large_file_down.speed_mbps.toFixed(2) + " MB/s") : "--");
+            if (data.large_file_down.duration > 0) setSafeText('durLargeDown', (data.large_file_down.duration / 1000000000).toFixed(1) + "s");
         }
 
         // Network Stats
         if (data.ping_stats) {
             const p = data.ping_stats;
-            document.getElementById('resPing').innerText = p.avg_ms.toFixed(2) + ' ms';
-            document.getElementById('resPacketLoss').innerText = p.packet_loss.toFixed(1) + '%';
+            setSafeText('resPing', (p.avg_ms || 0).toFixed(2) + ' ms');
+            setSafeText('resPacketLoss', (p.packet_loss || 0).toFixed(1) + '%');
 
             let pingQ = 'green';
             if (p.avg_ms > 60) pingQ = 'red';
             else if (p.avg_ms > 25) pingQ = 'yellow';
-            document.getElementById('qPing').className = `quality-indicator quality-${pingQ}`;
+            const qPing = document.getElementById('qPing');
+            if (qPing) qPing.className = `quality-indicator quality-${pingQ}`;
 
             let lossQ = 'green';
             if (p.packet_loss > 1) lossQ = 'red';
             else if (p.packet_loss > 0) lossQ = 'yellow';
-            document.getElementById('qLoss').className = `quality-indicator quality-${lossQ}`;
+            const qLoss = document.getElementById('qLoss');
+            if (qLoss) qLoss.className = `quality-indicator quality-${lossQ}`;
 
             // Render Ping Table if provided
             const tbody = document.getElementById('pingTableBody');
@@ -246,26 +253,25 @@ evtSource.addEventListener("result", function (event) {
                 tbody.innerHTML = '';
                 p.results.forEach(r => {
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${r.Seq}</td>
-                                 <td>${r.Success ? r.TimeMs.toFixed(2) : '-'}</td>
-                                 <td>${r.Success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + r.ErrorMsg + '</span>'}</td>`;
+                    row.innerHTML = `<td>${r.seq}</td>
+                                 <td>${r.success ? (r.time_ms || 0).toFixed(2) : '-'}</td>
+                                 <td>${r.success ? '<span class="success-dot">OK</span>' : '<span class="fail-dot">' + (r.error_msg || 'Error') + '</span>'}</td>`;
                     tbody.appendChild(row);
                 });
             }
 
-            document.getElementById('pingCount').innerText = p.count || "--";
-            document.getElementById('pingAvg').innerText = p.avg_ms.toFixed(2) + " ms";
-            document.getElementById('pingMin').innerText = p.min_ms.toFixed(2);
-            document.getElementById('pingMax').innerText = p.max_ms.toFixed(2);
-            document.getElementById('pingLoss').innerText = p.packet_loss.toFixed(1) + "%";
+            setSafeText('pingCount', p.count || "--");
+            setSafeText('pingAvg', (p.avg_ms || 0).toFixed(2) + " ms");
+            setSafeText('pingMin', (p.min_ms || 0).toFixed(2) + " ms");
+            setSafeText('pingMax', (p.max_ms || 0).toFixed(2) + " ms");
+            setSafeText('pingLoss', (p.packet_loss || 0).toFixed(1) + "%");
         }
 
         if (data.dns) {
             const d = data.dns;
             if (d.resolution_time > 0) {
-                document.getElementById('resDNS').innerText = d.resolution_time.toFixed(1) + " ms";
-                const dnsTimeEl = document.getElementById('dnsTime');
-                if (dnsTimeEl) dnsTimeEl.innerText = d.resolution_time.toFixed(2) + " ms";
+                setSafeText('resDNS', (d.resolution_time || 0).toFixed(1) + " ms");
+                setSafeText('dnsTime', (d.resolution_time || 0).toFixed(2) + " ms");
                 const ipsDiv = document.getElementById('dnsIPs');
                 if (ipsDiv && d.resolved_ips) {
                     ipsDiv.innerHTML = '';
@@ -280,9 +286,10 @@ evtSource.addEventListener("result", function (event) {
 
         if (data.advanced_net) {
             const a = data.advanced_net;
-            document.getElementById('advNetStats').style.display = 'block';
-            document.getElementById('valSSL').innerText = a.tls_handshake_ms.toFixed(1) + " ms";
-            document.getElementById('valMTU').innerText = a.mtu ? a.mtu + " B" : "Unknown";
+            const advEl = document.getElementById('advNetStats');
+            if (advEl) advEl.style.display = 'grid';
+            setSafeText('valSSL', (a.tls_handshake_ms || 0).toFixed(1) + " ms");
+            setSafeText('valMTU', a.mtu ? a.mtu + " B" : "Unknown");
             const vpnEl = document.getElementById('valVPN');
             if (a.vpn_detected) {
                 vpnEl.innerText = "VPN: " + (a.vpn_type || "Detected");
@@ -294,51 +301,69 @@ evtSource.addEventListener("result", function (event) {
             }
         }
 
-        // System & Cloud Info
-        if (data.system_os) document.getElementById('sysOS').innerText = data.system_os;
-        if (data.cpu) {
-            document.getElementById('sysCPU').innerText = data.cpu.Model;
-            document.getElementById('sysCPUUsage').innerText = data.cpu.Usage.toFixed(1) + "%";
+        // System & Server Info
+        if (data.traceroute) {
+            const tBox = document.getElementById('tracerouteBox');
+            if (tBox) {
+                tBox.innerHTML = '';
+                data.traceroute.forEach(hop => {
+                    const div = document.createElement('div');
+                    div.innerText = hop;
+                    tBox.appendChild(div);
+                });
+            }
         }
-        if (data.peak_cpu_usage !== undefined) document.getElementById('sysCPUPeak').innerText = data.peak_cpu_usage.toFixed(1) + "%";
+
+        if (data.system_os) document.getElementById('sysOS').innerText = data.system_os;
+
+        if (data.cpu) {
+            const cpu = data.cpu;
+            if (document.getElementById('sysCPU')) document.getElementById('sysCPU').innerText = cpu.model || "--";
+            if (document.getElementById('sysCPUUsage')) document.getElementById('sysCPUUsage').innerText = (cpu.usage || 0).toFixed(1) + "%";
+        }
+        if (data.peak_cpu_usage !== undefined) {
+            const peakEl = document.getElementById('sysCPUPeak');
+            if (peakEl) peakEl.innerText = data.peak_cpu_usage.toFixed(1) + "%";
+        }
 
         if (data.ram) {
-            document.getElementById('sysRAMTotal').innerText = data.ram.Total;
-            document.getElementById('sysRAMUsed').innerText = data.ram.Used + " (" + data.ram.Usage.toFixed(1) + "%)";
-            document.getElementById('sysRAMFree').innerText = data.ram.Free;
+            const ram = data.ram;
+            if (document.getElementById('sysRAMTotal')) document.getElementById('sysRAMTotal').innerText = ram.total || "--";
+            if (document.getElementById('sysRAMUsed')) document.getElementById('sysRAMUsed').innerText = (ram.used || "--") + " (" + (ram.usage || 0).toFixed(1) + "%)";
+            if (document.getElementById('sysRAMFree')) document.getElementById('sysRAMFree').innerText = ram.free || "--";
         }
 
         if (data.disk_io) {
-            document.getElementById('diskWrite').innerText = data.disk_io.write_mbps.toFixed(1) + " MB/s";
-            document.getElementById('diskRead').innerText = data.disk_io.read_mbps.toFixed(1) + " MB/s";
+            if (document.getElementById('diskWrite')) document.getElementById('diskWrite').innerText = (data.disk_io.write_mbps || 0).toFixed(1) + " MB/s";
+            if (document.getElementById('diskRead')) document.getElementById('diskRead').innerText = (data.disk_io.read_mbps || 0).toFixed(1) + " MB/s";
         }
 
         if (data.local_network) {
             const ln = data.local_network;
-            document.getElementById('netConnType').innerText = ln.ConnectionType || "--";
-            document.getElementById('netPrimaryIF').innerText = ln.PrimaryIF || "--";
+            document.getElementById('netConnType').innerText = ln.connection_type || "--";
+            document.getElementById('netPrimaryIF').innerText = ln.primary_if || "--";
 
             const listEl = document.getElementById('netInterfacesList');
-            if (listEl && ln.Interfaces) {
+            if (listEl && ln.interfaces) {
                 listEl.innerHTML = '';
-                ln.Interfaces.forEach(iface => {
+                ln.interfaces.forEach(iface => {
                     const row = document.createElement('div');
                     row.style.fontSize = '0.85em';
                     row.style.marginBottom = '8px';
                     row.style.padding = '5px';
                     row.style.borderRadius = '4px';
-                    if (iface.Name === ln.PrimaryIF) {
+                    if (iface.name === ln.primary_if) {
                         row.style.background = '#e8f4fd';
                         row.style.borderLeft = '3px solid #003d8f';
                     }
 
-                    const speedHtml = iface.LinkSpeed && iface.LinkSpeed !== 'Unknown'
-                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed} ${iface.LinkSpeed}</div>`
+                    const speedHtml = iface.link_speed && iface.link_speed !== 'Unknown'
+                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed} ${iface.link_speed}</div>`
                         : '';
 
                     row.innerHTML = `
-                        <div style="font-weight: bold;">${iface.Name} (${iface.Type})</div>
-                        <div style="color: #666;">${iface.IPAddress}</div>
+                        <div style="font-weight: bold;">${iface.name} (${iface.type})</div>
+                        <div style="color: #666;">${iface.ip_address}</div>
                         ${speedHtml}
                     `;
                     listEl.appendChild(row);
@@ -348,13 +373,25 @@ evtSource.addEventListener("result", function (event) {
 
         if (data.cloud_check) {
             const cc = data.cloud_check;
-            const statusEl = document.getElementById('ncStatus');
-            if (statusEl) {
+            const detailEl = document.getElementById('ncStatusDetail');
+            const badgeEl = document.getElementById('ncStatusBadge');
+
+            if (detailEl) {
                 let statusText = `Nextcloud ${cc.version || "--"}`;
                 if (cc.edition) statusText += ` (${cc.edition})`;
-                if (cc.maintenance_mode) statusText += " [Maintenance]";
-                statusEl.innerText = statusText;
-                statusEl.style.display = 'inline-block';
+                detailEl.innerText = statusText;
+            }
+
+            if (badgeEl) {
+                if (cc.maintenance) {
+                    badgeEl.innerText = "[Maintenance Mode]";
+                    badgeEl.className = "badge badge-red";
+                    badgeEl.style.display = 'inline-block';
+                } else {
+                    badgeEl.innerText = cc.status || "Connected";
+                    badgeEl.className = "badge badge-blue";
+                    badgeEl.style.display = 'inline-block';
+                }
             }
         }
 
@@ -475,7 +512,7 @@ function resetUI() {
 
     // Reset labels to placeholder
     const labels = [
-        'resSmall', 'resSmallDown', 'resMedium', 'resMediumDown', 'resLarge', 'resLargeDown',
+        'resURL', 'ncStatusDetail', 'resSmall', 'resSmallDown', 'resMedium', 'resMediumDown', 'resLarge', 'resLargeDown',
         'resPing', 'resPacketLoss', 'resDNS', 'diskWrite', 'diskRead',
         'sysOS', 'sysCPU', 'sysCPUUsage', 'sysCPUPeak', 'sysRAMTotal', 'sysRAMUsed', 'sysRAMFree',
         'resProvider', 'resStServer', 'refUp', 'refDown', 'netConnType', 'netPrimaryIF', 'valSSL', 'valMTU'
@@ -485,16 +522,20 @@ function resetUI() {
         if (el) el.innerText = '--';
     });
 
+    const trac = document.getElementById('tracerouteBox');
+    if (trac) trac.innerHTML = '';
+
     const cBtn = document.getElementById('cancelBtn');
     if (cBtn) {
         cBtn.disabled = false;
         cBtn.innerHTML = `<i class="fas fa-times-circle"></i> <span data-i18n="btn_cancel">${translations[currentLang].btn_cancel}</span>`;
     }
 
-    const ncStatus = document.getElementById('ncStatus');
-    if (ncStatus) {
-        ncStatus.innerText = '';
-        ncStatus.style.display = 'none';
+    const ncBadge = document.getElementById('ncStatusBadge');
+    if (ncBadge) {
+        ncBadge.innerText = '';
+        ncBadge.style.display = 'none';
+        ncBadge.className = 'badge';
     }
 
     // Reset quality dots

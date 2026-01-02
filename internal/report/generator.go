@@ -9,16 +9,22 @@ import (
 	"nextcloud-perf/internal/network"
 )
 
+type Hop struct {
+	TTL     int           `json:"ttl"`
+	Address string        `json:"address"`
+	RTT     time.Duration `json:"rtt"`
+}
+
 type CPUInfo struct {
-	Model string
-	Usage float64
+	Model string  `json:"model"`
+	Usage float64 `json:"usage"`
 }
 
 type RAMInfo struct {
-	Total string
-	Free  string
-	Used  string
-	Usage float64
+	Total string  `json:"total"`
+	Free  string  `json:"free"`
+	Used  string  `json:"used"`
+	Usage float64 `json:"usage"`
 }
 
 type DiskResult struct {

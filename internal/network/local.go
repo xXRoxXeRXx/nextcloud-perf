@@ -9,17 +9,17 @@ import (
 )
 
 type InterfaceInfo struct {
-	Name      string
-	Type      string // "Ethernet", "WiFi", "Unknown"
-	IPAddress string
-	LinkSpeed string // e.g., "1000 Mbps"
-	IsUp      bool
+	Name      string `json:"name"`
+	Type      string `json:"type"` // "Ethernet", "WiFi", "Unknown"
+	IPAddress string `json:"ip_address"`
+	LinkSpeed string `json:"link_speed"` // e.g., "1000 Mbps"
+	IsUp      bool   `json:"is_up"`
 }
 
 type LocalNetworkInfo struct {
-	Interfaces     []InterfaceInfo
-	PrimaryIF      string
-	ConnectionType string // "Ethernet", "WiFi", "Unknown"
+	Interfaces     []InterfaceInfo `json:"interfaces"`
+	PrimaryIF      string          `json:"primary_if"`
+	ConnectionType string          `json:"connection_type"` // "Ethernet", "WiFi", "Unknown"
 }
 
 func GetLocalNetworkInfo() LocalNetworkInfo {

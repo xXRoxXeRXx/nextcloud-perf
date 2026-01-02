@@ -356,6 +356,29 @@ select:focus {
     letter-spacing: 2px;
 }
 
+.perf-card {
+    padding: 15px !important;
+}
+
+.perf-metric {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.perf-metric .value {
+    font-weight: bold;
+    color: #003d8f;
+    flex-grow: 1;
+}
+
+.perf-metric .duration {
+    font-size: 0.8em;
+    color: #999;
+}
+
 .current-status {
     background: #f8f9ff;
     border: 1px solid #e0e7ff;
@@ -434,8 +457,18 @@ select:focus {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.perf-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+@media (max-width: 900px) {
+    .perf-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .premium-card {
@@ -456,20 +489,27 @@ select:focus {
 /* Performance Highlight Cards */
 .perf-card {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-    border-left: 5px solid #667eea;
+    border-left: 5px solid #003d8f;
+    padding: 15px !important;
 }
 
-.perf-card .metric-value {
-    font-size: 1.8em;
-    font-weight: 800;
+.perf-metric {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.85em;
+}
+
+.perf-metric .value {
+    font-weight: bold;
     color: #003d8f;
-    margin: 10px 0;
+    flex-grow: 1;
 }
 
-.perf-card .metric-label {
-    font-size: 0.9em;
-    color: var(--text-tertiary);
-    font-weight: 600;
+.perf-metric .duration {
+    font-size: 0.8em;
+    color: #999;
 }
 
 /* Badges */

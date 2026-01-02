@@ -11,9 +11,9 @@ import (
 )
 
 type Hop struct {
-	TTL     int
-	Address string
-	RTT     time.Duration
+	TTL     int           `json:"ttl"`
+	Address string        `json:"address"`
+	RTT     time.Duration `json:"rtt"`
 }
 
 // RunTraceroute performs a traceroute using ICMP Echo Requests.
