@@ -1,6 +1,27 @@
 /* AppImage Re-Signer - IONOS Design */
 /* Based on log-scanner styling with IONOS brand colors */
 
+/* Icon Replacements (Unicode instead of Font Awesome) */
+.fas, .fa {
+    font-style: normal;
+    font-weight: normal;
+}
+.fa-globe::before { content: "🌐"; }
+.fa-cloud::before { content: "☁️"; }
+.fa-sign-in-alt::before { content: "🔐"; }
+.fa-tachometer-alt::before { content: "⚡"; }
+.fa-desktop::before { content: "💻"; }
+.fa-network-wired::before { content: "🌐"; }
+.fa-plug::before { content: "🔌"; }
+.fa-file-alt::before { content: "📄"; }
+.fa-times-circle::before { content: "❌"; }
+.fa-check-circle::before { content: "✅"; }
+.fa-server::before { content: "🖥️"; }
+.fa-bolt::before { content: "⚡"; }
+.fa-file-download::before { content: "📥"; }
+.fa-redo::before { content: "🔄"; }
+.fa-spinner::before { content: "⏳"; }
+
 /* CSS Variables for Light/Dark Mode */
 :root {
     /* IONOS Brand Colors */

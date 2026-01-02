@@ -55,8 +55,71 @@ evtSource.addEventListener("message", function (event) {
         logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    // Update current status display
-    if (currentStatus) currentStatus.innerText = msg;
+
+    // Update current status display with simplified messages
+    // Only show user-friendly messages, ignore all technical details (HTTP, MOVE, PUT, etc.)
+    if (currentStatus) {
+        let simplifiedMsg = null;
+        
+        // System Phase
+        if (msg.includes("System") || msg.includes("Collecting System")) {
+            simplifiedMsg = translations[currentLang].status_system || "Analyzing system...";
+        }
+        // Network Tests
+        else if (msg.includes("DNS")) {
+            simplifiedMsg = translations[currentLang].status_dns || "Testing DNS resolution...";
+        }
+        else if (msg.includes("Ping")) {
+            simplifiedMsg = translations[currentLang].status_ping || "Measuring latency...";
+        }
+        else if (msg.includes("Traceroute")) {
+            simplifiedMsg = translations[currentLang].status_traceroute || "Tracing network path...";
+        }
+        else if (msg.includes("Reference Speedtest") || msg.includes("Running Reference")) {
+            simplifiedMsg = translations[currentLang].status_speedtest || "Running speed test...";
+        }
+        else if (msg.includes("Ref Speed")) {
+            simplifiedMsg = translations[currentLang].status_speedtest_done || "Speed test completed";
+        }
+        // Connection
+        else if (msg.includes("Connecting")) {
+            simplifiedMsg = translations[currentLang].status_connecting || "Connecting to Nextcloud...";
+        }
+        else if (msg.includes("Connected")) {
+            simplifiedMsg = translations[currentLang].status_connected || "Connected successfully";
+        }
+        // Benchmarks
+        else if (msg.includes("Starting Small Files Test")) {
+            simplifiedMsg = translations[currentLang].status_small_files || "Testing small files...";
+        }
+        else if (msg.includes("Starting Medium Files Test")) {
+            simplifiedMsg = translations[currentLang].status_medium_files || "Testing medium files...";
+        }
+        else if (msg.includes("Starting Large File Test")) {
+            simplifiedMsg = translations[currentLang].status_large_file || "Testing large file...";
+        }
+        else if (msg.includes("chunk")) {
+            simplifiedMsg = translations[currentLang].status_uploading || "Uploading large file...";
+        }
+        else if (msg.includes("Download") && !msg.includes("http") && !msg.includes("MOVE") && !msg.includes("GET")) {
+            simplifiedMsg = translations[currentLang].status_downloading || "Downloading test files...";
+        }
+        // Finalization
+        else if (msg.includes("Cleanup")) {
+            simplifiedMsg = translations[currentLang].status_cleanup || "Cleaning up...";
+        }
+        else if (msg.includes("Generating Report")) {
+            simplifiedMsg = translations[currentLang].status_generating || "Generating report...";
+        }
+        else if (msg.includes("Report Ready")) {
+            simplifiedMsg = translations[currentLang].status_ready || "Analysis complete!";
+        }
+        
+        // Only update if we have a simplified message (ignore all technical details)
+        if (simplifiedMsg) {
+            currentStatus.innerText = simplifiedMsg;
+        }
+    }
 
     // Determine stage and progress based on message content
     if (msg.includes("System") || msg.includes("Collecting System")) {
@@ -382,28 +445,41 @@ evtSource.addEventListener("result", function (event) {
             const listEl = document.getElementById('netInterfacesList');
             if (listEl && ln.interfaces && ln.interfaces.length > 0) {
                 listEl.innerHTML = '';
-                ln.interfaces.forEach(iface => {
+                // Limit to first 3 interfaces to prevent scrolling
+                const interfacesToShow = ln.interfaces.slice(0, 3);
+                interfacesToShow.forEach(iface => {
                     const row = document.createElement('div');
                     row.style.fontSize = '0.85em';
-                    row.style.marginBottom = '8px';
-                    row.style.padding = '5px';
-                    row.style.borderRadius = '4px';
+                    row.style.marginBottom = '6px';
+                    row.style.padding = '8px';
+                    row.style.borderRadius = '6px';
+                    row.style.background = '#f8f9fa';
                     if (iface.name === ln.primary_if) {
                         row.style.background = '#e8f4fd';
                         row.style.borderLeft = '3px solid #003d8f';
                     }
 
                     const speedHtml = iface.link_speed && iface.link_speed !== 'Unknown'
-                        ? `<div style="color: #27ae60; font-weight: bold;">${translations[currentLang].label_link_speed || "Speed"}: ${iface.link_speed}</div>`
+                        ? `<div style="color: #27ae60; font-weight: bold; font-size: 0.9em;">${translations[currentLang].label_link_speed || "Speed"}: ${iface.link_speed}</div>`
                         : '';
 
                     row.innerHTML = `
-                        <div style="font-weight: bold;">${iface.name} (${iface.type})</div>
-                        <div style="color: #666;">${iface.ip_address}</div>
+                        <div style="font-weight: bold; color: #333;">${iface.name} <span style="color: #666; font-weight: normal;">(${iface.type})</span></div>
+                        <div style="color: #666; font-size: 0.85em; margin-top: 2px;">${iface.ip_address}</div>
                         ${speedHtml}
                     `;
                     listEl.appendChild(row);
                 });
+                // Show count if there are more interfaces
+                if (ln.interfaces.length > 3) {
+                    const moreDiv = document.createElement('div');
+                    moreDiv.style.fontSize = '0.8em';
+                    moreDiv.style.color = '#666';
+                    moreDiv.style.marginTop = '5px';
+                    moreDiv.style.fontStyle = 'italic';
+                    moreDiv.innerText = `+${ln.interfaces.length - 3} more interface(s)`;
+                    listEl.appendChild(moreDiv);
+                }
             }
         }
 

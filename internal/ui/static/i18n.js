@@ -33,7 +33,7 @@ const translations = {
         label_latency: "Avg Latency",
         label_packet_loss: "Packet Loss",
         label_dns: "DNS Resolution",
-        btn_download_report: "Download Detailed Report",
+        btn_download_report: "Download Report",
         btn_run_new: "Run New Test",
         conc_excellent: "Excellent connection",
         conc_solid: "Solid performance",
@@ -69,7 +69,24 @@ const translations = {
         label_interface: "Interface",
         label_type: "Type",
         label_ip: "IP Address",
-        summary_view_logs: "View Technical Logs"
+        summary_view_logs: "View Technical Logs",
+        // Simplified Status Messages
+        status_system: "Analyzing system...",
+        status_dns: "Testing DNS resolution...",
+        status_ping: "Measuring latency...",
+        status_traceroute: "Tracing network path...",
+        status_speedtest: "Running speed test...",
+        status_speedtest_done: "Speed test completed",
+        status_connecting: "Connecting to Nextcloud...",
+        status_connected: "Connected successfully",
+        status_small_files: "Testing small files...",
+        status_medium_files: "Testing medium files...",
+        status_large_file: "Testing large file...",
+        status_uploading: "Uploading large file...",
+        status_downloading: "Downloading test files...",
+        status_cleanup: "Cleaning up...",
+        status_generating: "Generating report...",
+        status_ready: "Analysis complete!"
     },
     de: {
         title: "Nextcloud Performance Check",
@@ -105,7 +122,7 @@ const translations = {
         label_latency: "Durchschn. Latenz",
         label_packet_loss: "Packet Loss",
         label_dns: "DNS-Auflösung",
-        btn_download_report: "Detaillierten Bericht herunterladen",
+        btn_download_report: "Bericht herunterladen",
         btn_run_new: "Neuen Test starten",
         conc_excellent: "Exzellente Verbindung",
         conc_solid: "Solide Leistung",
@@ -141,7 +158,24 @@ const translations = {
         label_interface: "Schnittstelle",
         label_type: "Typ",
         label_ip: "IP-Adresse",
-        summary_view_logs: "Technische Logs anzeigen"
+        summary_view_logs: "Technische Logs anzeigen",
+        // Vereinfachte Statusmeldungen
+        status_system: "System wird analysiert...",
+        status_dns: "DNS-Auflösung wird getestet...",
+        status_ping: "Latenz wird gemessen...",
+        status_traceroute: "Netzwerkpfad wird verfolgt...",
+        status_speedtest: "Geschwindigkeitstest läuft...",
+        status_speedtest_done: "Geschwindigkeitstest abgeschlossen",
+        status_connecting: "Verbindung mit Nextcloud wird hergestellt...",
+        status_connected: "Erfolgreich verbunden",
+        status_small_files: "Kleine Dateien werden getestet...",
+        status_medium_files: "Mittlere Dateien werden getestet...",
+        status_large_file: "Große Datei wird getestet...",
+        status_uploading: "Große Datei wird hochgeladen...",
+        status_downloading: "Test-Dateien werden heruntergeladen...",
+        status_cleanup: "Aufräumen...",
+        status_generating: "Bericht wird erstellt...",
+        status_ready: "Analyse abgeschlossen!"
     }
 };
 

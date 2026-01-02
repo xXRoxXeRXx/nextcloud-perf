@@ -7,7 +7,6 @@
     <title>Nextcloud Performance Tool</title>
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -171,19 +170,23 @@
             <!-- Category 3: Reference Section -->
             <div class="dashboard-section">
                 <h3 data-i18n="header_ref_speed"><i class="fas fa-globe"></i> Reference Speed (Speedtest.net)</h3>
-                <div class="dashboard-grid">
+                <div style="display: grid; gap: 15px;">
+                    <!-- ISP Info - Full Width -->
                     <div class="premium-card">
                         <div class="metric-label" data-i18n="label_isp">Internet Service Provider</div>
                         <div style="font-weight: bold; color: #333;" id="resProvider">--</div>
                         <div style="font-size: 0.85em; color: #666; margin-top: 5px;" id="resStServer">--</div>
                     </div>
-                    <div class="premium-card" style="border-bottom: 3px solid #27ae60;">
-                        <div class="metric-label" data-i18n="label_upload_ref">Upload (Ref)</div>
-                        <div style="font-weight: bold; font-size: 1.2em; color: #27ae60;" id="refUp">--</div>
-                    </div>
-                    <div class="premium-card" style="border-bottom: 3px solid #003d8f;">
-                        <div class="metric-label" data-i18n="label_download_ref">Download (Ref)</div>
-                        <div style="font-weight: bold; font-size: 1.2em; color: #003d8f;" id="refDown">--</div>
+                    <!-- Upload & Download - Side by Side -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="premium-card" style="border-bottom: 3px solid #27ae60;">
+                            <div class="metric-label" data-i18n="label_upload_ref">Upload (Ref)</div>
+                            <div style="font-weight: bold; font-size: 1.2em; color: #27ae60;" id="refUp">--</div>
+                        </div>
+                        <div class="premium-card" style="border-bottom: 3px solid #003d8f;">
+                            <div class="metric-label" data-i18n="label_download_ref">Download (Ref)</div>
+                            <div style="font-weight: bold; font-size: 1.2em; color: #003d8f;" id="refDown">--</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -277,7 +280,7 @@
                     <div class="premium-card">
                         <div class="metric-label" data-i18n="label_local_network">Local Access</div>
                         <div style="font-weight: bold; margin: 8px 0; color: #003d8f;" id="netConnType">--</div>
-                        <div id="netInterfacesList" style="font-size: 0.85em; max-height: 100px; overflow-y: auto;">
+                        <div id="netInterfacesList" style="font-size: 0.85em;">
                         </div>
                     </div>
                     <!-- Advanced Stats -->
@@ -332,8 +335,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="margin-top: 15px;">
-                            <h4 style="margin-bottom: 5px;">Traceroute Path</h4>
+                        <div class="premium-card" style="margin-top: 15px; background: #fff;">
+                            <h4 style="margin-bottom: 10px;">Traceroute Path</h4>
                             <div id="tracerouteBox" class="log-output" style="max-height: 150px; font-size: 0.8em;">
                             </div>
                         </div>

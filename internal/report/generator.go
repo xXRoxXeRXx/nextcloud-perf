@@ -253,6 +253,7 @@ const htmlTemplate = `
             <div class="meta">
                 <span data-i18n="meta_target">Target:</span> {{.Data.TargetURL}} | 
                 <span data-i18n="meta_server">Server:</span> {{if .Data.CloudCheck.Status}}{{.Data.CloudCheck.Status}}{{else}}Nextcloud{{end}} {{.Data.CloudCheck.Version}}
+                {{if .Data.CloudCheck.Edition}}<span class="health-tag tag-blue">{{.Data.CloudCheck.Edition}}</span>{{end}}
                 {{if .Data.CloudCheck.Maintenance}}<span class="health-tag tag-red">MAINTENANCE</span>{{end}}
             </div>
         </header>
@@ -280,6 +281,9 @@ const htmlTemplate = `
                     {{range .Data.LocalNetwork.Interfaces}}
                     <div style="font-size: 0.85em; margin-top: 5px;">
                         <strong>{{.Name}}</strong> ({{.Type}}): {{.IPAddress}}
+                        {{if and .LinkSpeed (ne .LinkSpeed "Unknown")}}
+                        <br><span style="color: #27ae60; font-weight: bold; font-size: 0.9em;">Speed: {{.LinkSpeed}}</span>
+                        {{end}}
                     </div>
                     {{end}}
                 </div>
