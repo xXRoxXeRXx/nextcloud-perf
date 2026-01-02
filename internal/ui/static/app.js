@@ -165,14 +165,15 @@ evtSource.addEventListener("result", function (event) {
             document.getElementById('resultsCard').style.display = 'block';
 
             const header = document.getElementById('resultHeader');
+            header.classList.add('premium-header-fail'); // Optional CSS class if we want
             header.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
             const failText = translations[currentLang].benchmark_failed || "Benchmark Failed";
             const backText = translations[currentLang].btn_back || "Back to Connection Details";
             header.innerHTML = `
-                <i class="fas fa-exclamation-circle" style="font-size: 50px; margin-bottom: 15px;"></i>
-                <h2 style="margin: 0;">${failText}</h2>
-                <div style="margin-top:10px; font-size: 1.1em; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">${data.error}</div>
-                <button class="btn-secondary" onclick="resetUI()" style="margin-top:20px; background: white; color: #c0392b; cursor: pointer;">
+                <i class="fas fa-exclamation-circle" style="font-size: 60px; margin-bottom: 15px;"></i>
+                <h2 style="margin: 0; font-size: 2em;">${failText}</h2>
+                <div style="margin-top:20px; font-size: 1.1em; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; backdrop-filter: blur(5px);">${data.error}</div>
+                <button class="btn-secondary" onclick="resetUI()" style="margin-top:25px; background: white; color: #c0392b; cursor: pointer; padding: 12px 25px; border-radius: 10px; border: none; font-weight: bold;">
                     <i class="fas fa-arrow-left"></i> <span>${backText}</span>
                 </button>
             `;
@@ -192,10 +193,9 @@ evtSource.addEventListener("result", function (event) {
                 }
             });
 
-            const header = document.getElementById('resultHeader');
-            header.style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
+            header.style.background = 'linear-gradient(135deg, #27ae60 0%, #166534 100%)';
             const successText = translations[currentLang].benchmark_completed;
-            header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 50px; margin-bottom: 15px;"></i><h2 style="margin: 0;">' + successText + '</h2>';
+            header.innerHTML = '<i class="fas fa-check-circle" style="font-size: 60px; margin-bottom: 15px;"></i><h2 style="margin: 0; font-size: 2em;">' + successText + '</h2>';
         }
 
         // Populate results (Transfer Speeds)
@@ -458,15 +458,50 @@ function resetUI() {
     if (logDiv) logDiv.innerHTML = '';
     if (currentStatus) currentStatus.innerText = translations[currentLang].status_initializing;
 
+    // Reset Stages
     ['system', 'network', 'connect', 'benchmark', 'report'].forEach(s => {
         const el = document.getElementById('stage-' + s);
         if (el) el.classList.remove('active', 'done');
     });
     currentStage = '';
 
+    // Clear lists & boxes
+    const trBox = document.getElementById('tracerouteBox');
+    if (trBox) trBox.innerHTML = '';
+    const listEl = document.getElementById('netInterfacesList');
+    if (listEl) listEl.innerHTML = '';
+    const dnsIPs = document.getElementById('dnsIPs');
+    if (dnsIPs) dnsIPs.innerHTML = '';
+
+    // Reset labels to placeholder
+    const labels = [
+        'resSmall', 'resSmallDown', 'resMedium', 'resMediumDown', 'resLarge', 'resLargeDown',
+        'resPing', 'resPacketLoss', 'resDNS', 'diskWrite', 'diskRead',
+        'sysOS', 'sysCPU', 'sysCPUUsage', 'sysCPUPeak', 'sysRAMTotal', 'sysRAMUsed', 'sysRAMFree',
+        'resProvider', 'resStServer', 'refUp', 'refDown', 'netConnType', 'netPrimaryIF', 'valSSL', 'valMTU'
+    ];
+    labels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = '--';
+    });
+
     const cBtn = document.getElementById('cancelBtn');
     if (cBtn) {
         cBtn.disabled = false;
         cBtn.innerHTML = `<i class="fas fa-times-circle"></i> <span data-i18n="btn_cancel">${translations[currentLang].btn_cancel}</span>`;
     }
+
+    const ncStatus = document.getElementById('ncStatus');
+    if (ncStatus) {
+        ncStatus.innerText = '';
+        ncStatus.style.display = 'none';
+    }
+
+    // Reset quality dots
+    document.querySelectorAll('.quality-indicator').forEach(dot => {
+        dot.className = 'quality-indicator quality-none';
+    });
+    document.querySelectorAll('.conclusion-text').forEach(c => {
+        c.innerHTML = '';
+    });
 }

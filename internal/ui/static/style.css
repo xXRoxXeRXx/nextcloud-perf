@@ -503,7 +503,7 @@ select:focus {
 
 /* Result Header Hero */
 #resultHeader {
-    background: linear-gradient(135deg, #003d8f 0%, #001b41 100%) !important;
+    background: linear-gradient(135deg, #003d8f 0%, #001b41 100%);
     padding: 40px !important;
     border-radius: 20px !important;
     position: relative;
